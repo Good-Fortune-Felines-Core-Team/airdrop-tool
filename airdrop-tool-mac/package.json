@@ -1,0 +1,25 @@
+{
+	"name": "neko_gatling_gun",
+	"version": "1.0.0",
+	"main": "index.js",
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"start": "tsc && node dist/index.js",
+		"dev": "tsc && node dist/index.js"
+	},
+	"devDependencies": {
+		"@types/bn.js": "^5.1.5",
+		"@types/inquirer": "^9.0.3",
+		"@types/node": "^18.11.18",
+		"concurrently": "^7.6.0",
+		"nodemon": "^2.0.20",
+		"typescript": "^4.9.4"
+	},
+	"dependencies": {
+		"bn.js": "^5.2.1",
+		"inquirer": "^9.1.4",
+		"near-api-js": "^1.1.0"
+	}
+}
