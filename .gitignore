@@ -275,5 +275,3 @@ dist/
 
 # dependencies
 .npmrc
-/.pnp
-.pnp.js
