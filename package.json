@@ -6,7 +6,8 @@
 	"type": "module",
 	"scripts": {
 		"build": "tsc",
-		"start": "ts-node src/index.ts"
+		"start": "node dist/index.js",
+		"dev": "ts-node src/index.js"
 	},
 	"devDependencies": {
 		"@types/bn.js": "^5.1.5",
