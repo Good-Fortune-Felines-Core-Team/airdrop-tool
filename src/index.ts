@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import "dotenv/config";
 import inquirer from "inquirer";
 import { Account, connect, Contract, keyStores } from "near-api-js";
 import { PublicKey } from "near-api-js/lib/utils";
@@ -7,7 +8,7 @@ import os from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { CREDENTIALS_DIRECTORY } from "@app/constants";
+import { CREDENTIALS_DIRECTORY, ERROR_DIRECTORY, FINISHED_DIRECTORY } from "@app/constants";
 import type { AccessKeyResponse, TokenContract } from "@app/types";
 import { isAccountValid, transferToAccount } from "@app/utils";
 
@@ -104,7 +105,7 @@ import { isAccountValid, transferToAccount } from "@app/utils";
       console.log("Invalid receiver account Id:", receiverAccountId);
 
       await appendFile(
-        join(pwd, "..", "error", `${listName}.txt`),
+        join(pwd, "..", ERROR_DIRECTORY, `${listName}.txt`),
         `${receiverAccountId}:${transferAmount.toString()}\r\n`
       );
 
@@ -126,7 +127,7 @@ import { isAccountValid, transferToAccount } from "@app/utils";
     // if the transfer was unsuccessful, log the error account
     if (!success) {
       await appendFile(
-        join(pwd, "..", "error", `${listName}.txt`),
+        join(pwd, "..", ERROR_DIRECTORY, `${listName}.txt`),
         `${receiverAccountId}:${transferAmount.toString()}\r\n`
       );
 
@@ -141,7 +142,7 @@ import { isAccountValid, transferToAccount } from "@app/utils";
   }
 
   await writeFile(
-    join(pwd, "..", "finished", `${listName}.json`),
+    join(pwd, "..", FINISHED_DIRECTORY, `${listName}.json`),
     JSON.stringify(completedAccounts),
   );
 

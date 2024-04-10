@@ -272,6 +272,8 @@ fabric.properties
 
 # build
 dist/
+error/
+finished/
 
 # dependencies
 .npmrc
