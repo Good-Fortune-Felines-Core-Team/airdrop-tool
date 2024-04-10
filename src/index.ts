@@ -15,6 +15,7 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
 
 (async () => {
 	const nearConnection = await createNearConnection();
+  const date: Date = new Date()
   let account: Account;
   let accountsFile: string;
   let accessKey: AccessKeyResponse;
@@ -27,23 +28,12 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
   let signerPublicKey: PublicKey;
 
   const { accountId } = await inquirer.prompt<Record<'accountId', string>>([{
-    message: "Enter Account Id used for shooting Token:",
+    message: "Enter account ID used for shooting tokens:",
     name: "accountId",
     type: "input",
   }]);
-
-  account = await nearConnection.account(accountId);
-  signerPublicKey = await account.connection.signer.getPublicKey(
-		accountId,
-    process.env.NEAR_NETWORK_ID
-	);
-  contract = new Contract(account, process.env.TOKEN_ADDRESS, {
-		viewMethods: ["ft_balance_of", "storage_balance_of"],
-		changeMethods: ["ft_transfer", "storage_deposit"],
-	}) as TokenContract;
-
-	const { listName } = await inquirer.prompt<Record<'listName', string>>([{
-    message: "Enter the json file name:",
+  const { listName } = await inquirer.prompt<Record<'listName', string>>([{
+    message: "Enter the name of the JSON file in the ./data directory that contains the list of receiver accounts:",
     name: "listName",
     type: "input",
   }]);
@@ -54,39 +44,58 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
   }]);
 	const { confirm } = await inquirer.prompt<Record<'confirm', boolean>>([
 		{
-      message: `Start Shooting Token to the list [ ${listName} ]?`,
+      message: `Start shooting tokens to the list [ ${listName} ]?`,
 			name: "confirm",
       type: "confirm",
 		},
 	]);
 
   if (!confirm) {
-    console.log("Okay Bye");
+    console.log("Okay Bye!");
 
     return;
   }
+
+  // TODO: handle errors
+  account = await nearConnection.account(accountId);
+  signerPublicKey = await account.connection.signer.getPublicKey(
+    accountId,
+    process.env.NEAR_NETWORK_ID
+  );
+  accessKey = await account.connection.provider.query<AccessKeyResponse>(
+    `access_key/${account.accountId}/${signerPublicKey.toString()}`,
+    ""
+  );
+  contract = new Contract(account, process.env.TOKEN_ADDRESS, {
+    viewMethods: ["ft_balance_of", "storage_balance_of"],
+    changeMethods: ["ft_transfer", "storage_deposit"],
+  }) as TokenContract;
 
 	nekoAmount = new BN(amount);
 
 	console.log("NEKO AMOUNT:", nekoAmount.toString());
 
   pwd = dirname(fileURLToPath(import.meta.url));
-  accountsFile = await readFile(
-    join(pwd, "..", "data", `${listName}.json`),
-    "utf-8"
-  );
+
+  // attempt to get the contents of the file
+  try {
+    accountsFile = await readFile(
+      join(pwd, "..", "data", `${listName}.json`),
+      "utf-8"
+    );
+  } catch (error) {
+    console.error(`List does not exist at ${join(pwd, "..", "data", `${listName}.json`)}`);
+
+    return;
+  }
 
   accounts = JSON.parse(accountsFile);
-  accessKey = await account.connection.provider.query<AccessKeyResponse>(
-    `access_key/${account.accountId}/${signerPublicKey.toString()}`,
-    ""
-  );
   completedAccounts = {};
   nonce = ++accessKey.nonce;
 
   for (let index = 0; index < Object.entries(accounts).length; index++) {
-    const [receiverAccountId, amount] = Object.entries(accounts)[index];
-    const holdAmount = new BN(amount);
+    const [receiverAccountId, receiverHoldAmount] = Object.entries(accounts)[index];
+    const holdAmount = new BN(receiverHoldAmount);
     const transferAmount = holdAmount.mul(nekoAmount);
     let success: boolean;
 
@@ -94,11 +103,15 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
 
     // if the account id is not valid, log the invalid account and move on
     if (!(await isAccountValid(receiverAccountId, { nearConnection }))) {
-      console.log("Invalid receiver account Id:", receiverAccountId);
+      console.error(`Invalid receiver account ID ${receiverAccountId}`);
 
       await appendFile(
-        join(pwd, "..", ERROR_DIRECTORY, `${listName}.txt`),
+        join(pwd, "..", ERROR_DIRECTORY, `${date.getTime()}-${listName}.txt`),
         `${receiverAccountId}:${transferAmount.toString()}\r\n`
+      );
+
+      console.log(
+        `==========================Transfer failed for ${receiverAccountId}==============================`
       );
 
       continue;
@@ -110,6 +123,7 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
       blockHash: accessKey.block_hash,
       contract,
       holdAmount,
+      nearConnection,
       nonce,
       nekoAmount,
       signerPublicKey,
@@ -119,17 +133,22 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
     // if the transfer was unsuccessful, log the error account
     if (!success) {
       await appendFile(
-        join(pwd, "..", ERROR_DIRECTORY, `${listName}.txt`),
+        join(pwd, "..", ERROR_DIRECTORY, `${date.getTime()}-${listName}.txt`),
         `${receiverAccountId}:${transferAmount.toString()}\r\n`
+      );
+
+      console.log(
+        `==========================Transfer failed for ${receiverAccountId}==============================`
       );
 
       continue;
     }
 
     completedAccounts[receiverAccountId] = holdAmount.toString();
+    nonce++;
 
     console.log(
-      "==========================Partially Done=============================="
+      `==========================Transfer complete for ${receiverAccountId}==============================`
     );
   }
 

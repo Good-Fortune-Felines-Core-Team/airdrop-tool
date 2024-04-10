@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { Account, transactions, utils } from "near-api-js";
+import { Account, Near, transactions, utils } from "near-api-js";
 import { Action, Transaction } from 'near-api-js/lib/transaction';
 import { PublicKey } from "near-api-js/lib/utils";
 import { clearInterval, setInterval } from "node:timers";
@@ -11,6 +11,7 @@ interface Options {
   blockHash: string;
   contract: TokenContract;
   holdAmount: BN;
+  nearConnection: Near;
   nekoAmount: BN;
   nonce: number;
   signerAccount: Account;
@@ -21,6 +22,7 @@ export default async function transferToAccount(receiverAccountId: string, {
   blockHash,
   contract,
   holdAmount,
+  nearConnection,
   nekoAmount,
   nonce,
   signerAccount,
@@ -35,7 +37,7 @@ export default async function transferToAccount(receiverAccountId: string, {
       let transaction: Transaction;
 
       try {
-        console.log("Checking Storage Balance....");
+        console.log("Checking storage balance");
 
         // add an action to register storage
         if (!(await contract.storage_balance_of({ account_id: receiverAccountId }))) {
@@ -79,14 +81,14 @@ export default async function transferToAccount(receiverAccountId: string, {
           transaction,
           signerAccount.connection.signer,
           signerAccount.accountId,
-          "mainnet"
+          nearConnection.connection.networkId,
         );
 
-        console.log(`Transferring to ${receiverAccountId}`);
+        console.log(`Transferring to account ${receiverAccountId}`);
 
-        await signerAccount.connection.provider.sendTransaction(signedTransaction);
+        const { transaction_outcome } = await signerAccount.connection.provider.sendTransaction(signedTransaction);
 
-        console.log(`Successfully sent transfer to ${receiverAccountId}`);
+        console.log(`Successfully transferred to ${receiverAccountId}: `, transaction_outcome.id);
 
         // clear the interval
         clearInterval(timer);

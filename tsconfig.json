@@ -2,17 +2,17 @@
 	"compilerOptions": {
         "baseUrl": "./",
         "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
         "isolatedModules": true,
         "module": "ESNext",
-        "moduleResolution": "NodeNext",
+        "moduleResolution": "Node",
         "outDir": "dist",
         "paths": {
             "@app/constants": ["src/constants"],
             "@app/types": ["src/types"],
             "@app/utils": ["src/utils"]
         },
-		"rootDir": "src",
+        "resolveJsonModule": true,
+        "rootDir": "src",
         "strict": true,
         "skipLibCheck": true,
         "target": "ESNext"
