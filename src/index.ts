@@ -1,24 +1,24 @@
 import BN from "bn.js";
 import "dotenv/config";
 import inquirer from "inquirer";
-import { Account, Contract } from "near-api-js";
+import { Account, Contract, Near } from "near-api-js";
 import { PublicKey } from "near-api-js/lib/utils";
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from "node:path";
-import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import { ERROR_DIRECTORY, FINISHED_DIRECTORY } from "@app/constants";
-import type { AccessKeyResponse, TokenContract } from "@app/types";
-import { createNearConnection, isAccountValid, transferToAccount } from "@app/utils";
+import type { AccessKeyResponse, Configuration, TokenContract } from "@app/types";
+import { createNearConnection, isAccountValid, parseConfiguration, transferToAccount } from "@app/utils";
 
 
 (async () => {
-	const nearConnection = await createNearConnection();
   const date: Date = new Date()
   let account: Account;
   let accountsFile: string;
   let accessKey: AccessKeyResponse;
+  let configuration: Configuration;
+  let nearConnection: Near;
   let nonce: number;
   let accounts: Record<string, string>;
   let completedAccounts: Record<string, string>;
@@ -27,13 +27,21 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
   let pwd: string;
   let signerPublicKey: PublicKey;
 
+  configuration = parseConfiguration();
+  nearConnection = await createNearConnection(configuration);
+
   const { accountId } = await inquirer.prompt<Record<'accountId', string>>([{
     message: "Enter account ID used for shooting tokens:",
     name: "accountId",
     type: "input",
   }]);
+  const { contractId } = await inquirer.prompt<Record<'contractId', string>>([{
+    message: "Enter the address of the token:",
+    name: "contractId",
+    type: "input",
+  }]);
   const { listName } = await inquirer.prompt<Record<'listName', string>>([{
-    message: "Enter the name of the JSON file in the ./data directory that contains the list of receiver accounts:",
+    message: "Enter the name of the JSON file that contains the list of receiver accounts:",
     name: "listName",
     type: "input",
   }]);
@@ -60,13 +68,13 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
   account = await nearConnection.account(accountId);
   signerPublicKey = await account.connection.signer.getPublicKey(
     accountId,
-    process.env.NEAR_NETWORK_ID
+    configuration.networkId,
   );
   accessKey = await account.connection.provider.query<AccessKeyResponse>(
     `access_key/${account.accountId}/${signerPublicKey.toString()}`,
     ""
   );
-  contract = new Contract(account, process.env.TOKEN_ADDRESS, {
+  contract = new Contract(account, contractId, {
     viewMethods: ["ft_balance_of", "storage_balance_of"],
     changeMethods: ["ft_transfer", "storage_deposit"],
   }) as TokenContract;
@@ -120,12 +128,11 @@ import { createNearConnection, isAccountValid, transferToAccount } from "@app/ut
     console.log("Valid receiver account Id: ", receiverAccountId);
 
     success = await transferToAccount(receiverAccountId, {
+      amount: transferAmount,
       blockHash: accessKey.block_hash,
       contract,
-      holdAmount,
       nearConnection,
       nonce,
-      nekoAmount,
       signerPublicKey,
       signerAccount: account,
     });

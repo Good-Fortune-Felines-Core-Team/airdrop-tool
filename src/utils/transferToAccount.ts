@@ -8,22 +8,20 @@ import type { TokenContract } from '@app/types';
 import { GAS_FEE_IN_ATOMIC_UNITS, MAX_RETRIES, RETRY_DELAY_IN_MILLISECONDS, STORAGE_FEE_IN_STANDARD_UNITS } from '@app/constants';
 
 interface Options {
+  amount: BN;
   blockHash: string;
   contract: TokenContract;
-  holdAmount: BN;
   nearConnection: Near;
-  nekoAmount: BN;
   nonce: number;
   signerAccount: Account;
   signerPublicKey: PublicKey;
 }
 
 export default async function transferToAccount(receiverAccountId: string, {
+  amount,
   blockHash,
   contract,
-  holdAmount,
   nearConnection,
-  nekoAmount,
   nonce,
   signerAccount,
   signerPublicKey,
@@ -32,7 +30,6 @@ export default async function transferToAccount(receiverAccountId: string, {
 
   return new Promise<boolean>((resolve) => {
     const timer = setInterval(async () => {
-      const transferAmount = holdAmount.mul(nekoAmount);
       let actions: Action[] = [];
       let transaction: Transaction;
 
@@ -62,7 +59,7 @@ export default async function transferToAccount(receiverAccountId: string, {
             "ft_transfer",
             {
               receiver_id: receiverAccountId,
-              amount: transferAmount.toString(),
+              amount: amount.toString(),
             },
             new BN(GAS_FEE_IN_ATOMIC_UNITS),
             new BN("1")
