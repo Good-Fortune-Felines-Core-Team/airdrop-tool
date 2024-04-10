@@ -1,28 +1,20 @@
 import BN from "bn.js";
 import "dotenv/config";
 import inquirer from "inquirer";
-import { Account, connect, Contract, keyStores } from "near-api-js";
+import { Account, Contract } from "near-api-js";
 import { PublicKey } from "near-api-js/lib/utils";
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
-import os from "node:os";
 import { dirname, join } from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { CREDENTIALS_DIRECTORY, ERROR_DIRECTORY, FINISHED_DIRECTORY } from "@app/constants";
+import { ERROR_DIRECTORY, FINISHED_DIRECTORY } from "@app/constants";
 import type { AccessKeyResponse, TokenContract } from "@app/types";
-import { isAccountValid, transferToAccount } from "@app/utils";
+import { createNearConnection, isAccountValid, transferToAccount } from "@app/utils";
+
 
 (async () => {
-  const contractId = "jumptoken.jumpfinance.near";
-  const credentialsPath = join(os.homedir(), CREDENTIALS_DIRECTORY);
-	const nearConnection = await connect({
-    networkId: "mainnet",
-    keyStore: new keyStores.UnencryptedFileSystemKeyStore(credentialsPath), // first create a key store
-    nodeUrl: "https://rpc.mainnet.near.org",
-    walletUrl: "https://wallet.mainnet.near.org",
-    helperUrl: "https://helper.mainnet.near.org",
-    explorerUrl: "https://explorer.mainnet.near.org",
-  });
+	const nearConnection = await createNearConnection();
   let account: Account;
   let accountsFile: string;
   let accessKey: AccessKeyResponse;
@@ -43,9 +35,9 @@ import { isAccountValid, transferToAccount } from "@app/utils";
   account = await nearConnection.account(accountId);
   signerPublicKey = await account.connection.signer.getPublicKey(
 		accountId,
-		"mainnet"
+    process.env.NEAR_NETWORK_ID
 	);
-  contract = new Contract(account, contractId, {
+  contract = new Contract(account, process.env.TOKEN_ADDRESS, {
 		viewMethods: ["ft_balance_of", "storage_balance_of"],
 		changeMethods: ["ft_transfer", "storage_deposit"],
 	}) as TokenContract;
