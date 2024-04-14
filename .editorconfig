@@ -1,6 +1,7 @@
 root = true
 
 [*]
+quote_type = single
 charset = utf-8
 indent_style = space
 end_of_line = lf
@@ -11,5 +12,4 @@ trim_trailing_whitespace = true
 indent_size = 4
 
 [*.{js,ts}]
-quote_type = double
 indent_size = 2
