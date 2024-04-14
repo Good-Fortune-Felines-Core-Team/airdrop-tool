@@ -101,13 +101,14 @@ This will compile the Typescript source code into a `dist/` directory.
 
 | Command               | Description                                                                        |
 |-----------------------|------------------------------------------------------------------------------------|
-| `yarn build`          | Builds the source code into the `dist/` directory.                                 |
-| `yarn run docs:build` | Builds the documentation into the `.docusaurus/` directory.                        |
-| `yarn run docs:serve` | Serves the built documentation from the `.docusaurus/` directory.                  |
-| `yarn run docs:start` | Builds and runs the documentation in a development environment with hot reloading. |
-| `yarn run lint`       | Runs the linter on `.js` and `.ts` files.                                          |
-| `yarn run prettier`   | Runs the prettier on `.js` and `.ts` files.                                        |
-| `yarn test`           | Runs the tests.                                                                    |
+| `npm run build`       | Builds the source code into the `dist/` directory.                                 |
+| `npm run docs:build` | Builds the documentation into the `.docusaurus/` directory.                        |
+| `npm run docs:serve` | Serves the built documentation from the `.docusaurus/` directory.                  |
+| `npm run docs:start` | Builds and runs the documentation in a development environment with hot reloading. |
+| `npm run lint`       | Runs the linter on `.js` and `.ts` files.                                          |
+| `npm run prettier`   | Runs the prettier on `.js` and `.ts` files.                                        |
+| `npm run start`      | Runs the CLI in development mode.                                                  |
+| `npm test`           | Runs the tests.                                                                    |
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
@@ -129,6 +130,10 @@ Please refer to the [LICENSE][license] file.
 [license]: ./LICENSE
 [node]: https://nodejs.org/en/
 [table-of-contents]: #table-of-contents
+
+
+
+
 
 
 

@@ -1,22 +1,37 @@
 {
-	"compilerOptions": {
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "allowUnreachableCode": false,
+        "alwaysStrict": true,
         "baseUrl": "./",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "emitDecoratorMetadata": true,
         "esModuleInterop": true,
-        "isolatedModules": true,
-        "module": "ESNext",
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "lib": ["ESNext"],
+        "module": "CommonJS",
         "moduleResolution": "Node",
-        "outDir": "dist",
+        "noFallthroughCasesInSwitch": false,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
         "paths": {
             "@app/constants": ["src/constants"],
             "@app/types": ["src/types"],
             "@app/utils": ["src/utils"]
         },
+        "removeComments": false,
         "resolveJsonModule": true,
-        "rootDir": "src",
-        "strict": true,
         "skipLibCheck": true,
-        "target": "ESNext"
-	},
-    "include": ["src/**/*"],
-    "exclude": ["node_modules"]
+        "sourceMap": true,
+        "strict": false,
+        "strictBindCallApply": false,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": false,
+        "target": "ES5"
+    }
 }
