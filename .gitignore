@@ -279,3 +279,6 @@ fabric.properties
 
 # dependencies
 .npmrc
+
+# near
+.near/data/

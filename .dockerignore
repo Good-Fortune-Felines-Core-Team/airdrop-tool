@@ -1,0 +1,7 @@
+.docs/
+.git/
+.idea/
+.temp/
+.vscode/
+dist/
+node_modules/
