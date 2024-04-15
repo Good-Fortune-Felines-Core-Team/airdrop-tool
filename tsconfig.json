@@ -20,9 +20,10 @@
         "noImplicitReturns": true,
         "noImplicitThis": true,
         "paths": {
+            "@app/configs": ["src/configs"],
             "@app/constants": ["src/constants"],
             "@app/types": ["src/types"],
-            "@app/utils": ["src/utils"]
+            "@app/utils/*": ["src/utils/*"]
         },
         "removeComments": false,
         "resolveJsonModule": true,
@@ -33,5 +34,8 @@
         "strictNullChecks": true,
         "strictPropertyInitialization": false,
         "target": "ES5"
+    },
+    "ts-node": {
+        "require": ["tsconfig-paths/register"]
     }
 }
