@@ -19,7 +19,7 @@ The signer account ID that will be used to authorized to airdrop the tokens.
 
 #### `--accounts=<path>`
 
-The path to the JSON file that contains a list of accounts and token amounts.
+The path to the JSON file that contains a list of accounts and number of NFTs the account holds. The number will be used to multiply the tokens.
 
 Each entry in the JSON file must conform to the below structure:
 
@@ -38,7 +38,7 @@ The file **MUST** be a JSON file the file **MUST** be in the same format as the 
 
 #### `--amount=<number>`
 
-The amount of tokens per NFT to airdrop.
+The amount of tokens (in atomic units, i.e. if the token has 6 decimals, and you want to send 1 token, you should use 1000000) to airdrop
 
 ### Optional
 

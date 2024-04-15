@@ -23,7 +23,10 @@ program
     '--accounts <path>',
     'the path to the JSON file that contains a list of accounts and token amounts'
   )
-  .requiredOption('--amount <number>', 'the amount of token per NFT to airdrop')
+  .requiredOption(
+    '--amount <number>',
+    'the amount of tokens (in atomic units, i.e. if the token has 6 decimals, and you want to send 1 token, you should use 1000000) to airdrop'
+  )
   .option(
     '--credentials <path>',
     'the path to the directory that contains the credentials for the account specified in "accountId"',

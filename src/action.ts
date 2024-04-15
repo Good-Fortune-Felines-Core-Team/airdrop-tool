@@ -145,10 +145,10 @@ export default async function action({
   );
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
-    const [receiverAccountId, receiverHoldAmount] =
+    const [receiverAccountId, receiverMultiplier] =
       Object.entries(transfers)[index];
-    const holdAmount = new BN(receiverHoldAmount);
-    const transferAmount = holdAmount.mul(new BN(amount));
+    const multipler = new BN(receiverMultiplier);
+    const transferAmount = multipler.mul(new BN(amount));
     let transactionID: string | null;
 
     logger.info(
@@ -173,12 +173,12 @@ export default async function action({
         `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" failed`
       );
 
-      failedTransfers[receiverAccountId] = holdAmount.toString();
+      failedTransfers[receiverAccountId] = multipler.toString();
 
       continue;
     }
 
-    completedTransfers[receiverAccountId] = holdAmount.toString();
+    completedTransfers[receiverAccountId] = multipler.toString();
     nonce++;
 
     logger.info(
