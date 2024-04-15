@@ -22,6 +22,7 @@
         "paths": {
             "@app/configs": ["src/configs"],
             "@app/constants": ["src/constants"],
+            "@app/enums": ["src/enums"],
             "@app/types": ["src/types"],
             "@app/utils/*": ["src/utils/*"]
         },
