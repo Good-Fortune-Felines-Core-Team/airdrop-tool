@@ -14,3 +14,24 @@ Use your favourite package manager to install:
 ```bash npm2yarn
 npm install -g @jumpdex/airdrop-tool
 ```
+
+## Running from command line
+
+Once you have installed the airdrop tool globally, you can run it from the command line using:
+
+```shell
+airdrop-tool \
+  --accountId="jumpfinance.near" \
+  --accounts="./accounts.json" \
+  --amount=100 \
+  --token="jumptoken.jumpfinance.near"
+```
+
+:::note
+
+The above example demonstrates the required options. However, see [additional options][additional-options] for more information.
+
+:::
+
+<!-- links -->
+[additional-options]: ../api-reference/cli-options

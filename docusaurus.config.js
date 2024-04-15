@@ -100,6 +100,12 @@ const config = {
             position: 'left',
             label: 'Usage',
           },
+          {
+            type: 'doc',
+            docId: 'api-reference/index',
+            position: 'left',
+            label: 'API',
+          },
           // right
           {
             href: githubLink,

@@ -13,6 +13,15 @@ const sidebars = {
       },
       type: 'category',
     },
+    {
+      items: ['api-reference/cli-options'],
+      label: 'API Reference',
+      link: {
+        type: 'doc',
+        id: 'api-reference/index',
+      },
+      type: 'category',
+    },
   ],
 };
 
