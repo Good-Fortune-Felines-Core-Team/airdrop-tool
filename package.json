@@ -32,7 +32,7 @@
         "prepare": "husky install",
         "prettier": "prettier --config .prettierrc --write \"**/*.{js,json,ts}\"",
         "start": "node -r ts-node/register src/index.ts",
-        "test": "jest --passWithNoTests"
+        "test": "./scripts/test.sh"
     },
     "bin": {
         "airdrop-tool": "dist/index.js"

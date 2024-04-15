@@ -1,1 +1,1 @@
-export { default as ErrorCodeEnum } from './ErrorCodeEnum';
+export { default as ExitCodeEnum } from './ExitCodeEnum';

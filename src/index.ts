@@ -2,9 +2,11 @@
 import { program } from 'commander';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import process from 'node:process';
 
 // actions
 import action from './action';
+import { ICommandOptions } from '@app/types';
 
 program
   .description(
@@ -40,5 +42,7 @@ program
   )
   .option('--verbose', 'logs extra information', false)
   .requiredOption('--token <token>', 'the address of the token to airdrop')
-  .action(action)
+  .action(async (options: ICommandOptions) =>
+    process.exit(await action(options))
+  )
   .parse();

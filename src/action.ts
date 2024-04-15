@@ -4,13 +4,12 @@ import { PublicKey } from 'near-api-js/lib/utils';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join, parse, ParsedPath } from 'node:path';
-import process from 'node:process';
 
 // configs
 import { local, mainnet, testnet } from '@app/configs';
 
 // enums
-import { ErrorCodeEnum } from '@app/enums';
+import { ExitCodeEnum } from '@app/enums';
 
 // types
 import type {
@@ -34,7 +33,7 @@ export default async function action({
   output,
   token,
   verbose,
-}: ICommandOptions): Promise<void> {
+}: ICommandOptions): Promise<ExitCodeEnum> {
   const date: Date = new Date();
   const logger: ILogger = createLogger(verbose ? 'debug' : 'error');
   let completedTransfers: Record<string, string>;
@@ -66,14 +65,14 @@ export default async function action({
   if (!existsSync(credentials)) {
     logger.error(`credentials directory at "${credentials}" does not exist`);
 
-    return process.exit(ErrorCodeEnum.Fail);
+    return ExitCodeEnum.DirectoryReadError;
   }
 
   // check if the list of accounts exists
   if (!existsSync(transfersFilePath)) {
     logger.error(`accounts file at "${transfersFilePath}" does not exist`);
 
-    return process.exit(ErrorCodeEnum.Fail);
+    return ExitCodeEnum.FileReadError;
   }
 
   // throw an error if it is not a json file
@@ -82,7 +81,7 @@ export default async function action({
       `expected the accounts file "${transfersFilePath}" to be a json file`
     );
 
-    return process.exit(ErrorCodeEnum.Fail);
+    return ExitCodeEnum.FileReadError;
   }
 
   // if the output directory doesn't exist, create it
@@ -94,7 +93,7 @@ export default async function action({
     } catch (error) {
       logger.error(error);
 
-      return process.exit(ErrorCodeEnum.Fail);
+      return ExitCodeEnum.DirectoryWriteError;
     }
   }
 
@@ -112,7 +111,7 @@ export default async function action({
   if (!signerPublicKey) {
     logger.error(`invalid account "${accountId}"`);
 
-    return process.exit(ErrorCodeEnum.Fail);
+    return ExitCodeEnum.InvalidAccountID;
   }
 
   signerAccessKey = await signer.connection.provider.query<IAccessKeyResponse>(
@@ -133,7 +132,7 @@ export default async function action({
       error
     );
 
-    return process.exit(ErrorCodeEnum.Fail);
+    return ExitCodeEnum.FileReadError;
   }
 
   completedTransfers = {};
@@ -221,5 +220,5 @@ export default async function action({
   );
   logger.info(`${Object.entries(failedTransfers).length} transfers failed`);
 
-  return process.exit(ErrorCodeEnum.Success);
+  return ExitCodeEnum.Success;
 }

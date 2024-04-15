@@ -1,6 +1,11 @@
-enum ErrorCodeEnum {
+enum ExitCodeEnum {
   Success,
-  Fail,
+  UnknownError,
+  InvalidAccountID,
+  DirectoryReadError,
+  DirectoryWriteError,
+  FileReadError,
+  FileWriteError,
 }
 
-export default ErrorCodeEnum;
+export default ExitCodeEnum;
