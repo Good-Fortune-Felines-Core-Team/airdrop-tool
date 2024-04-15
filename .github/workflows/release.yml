@@ -1,0 +1,52 @@
+name: "Release"
+
+on:
+  push:
+    branches:
+      - beta
+      - main
+
+jobs:
+  ##
+  # install
+  ##
+
+  install:
+    name: "Install"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+
+  ##
+  # release
+  ##
+
+  release:
+    name: "Release"
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📝 Create .npmrc"
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.PUBLISH_PUBLIC_PACKAGES_TOKEN }}" >> .npmrc
+          echo "@jumpdex-sh:registry=https://registry.npmjs.org" >> .npmrc
+          echo "access=public" >> .npmrc
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+      - name: "🏗️ Build"
+        run: npm run build
+      - name: "🔖 Release"
+        env:
+          # appears on the release commits
+          GIT_AUTHOR_NAME: jumpdex-bot
+          GIT_AUTHOR_EMAIL: tech@jumpdefi.xyz
+          GIT_COMMITTER_NAME: jumpdex-bot
+          GIT_COMMITTER_EMAIL: tech@jumpdefi.xyz
+          # used to push the release commit and create the tags
+          GITHUB_TOKEN: ${{ secrets.WRITE_REPOS_TOKEN }}
+        run: npx semantic-release
