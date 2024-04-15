@@ -270,10 +270,8 @@ fabric.properties
 
 ### Miscellaneous
 
-# build
-dist/
-error/
-finished/
+# documentation
+.docs
 
 # dependencies
 .npmrc
