@@ -1,0 +1,22 @@
+name: "Use npm Dependencies"
+
+description: "Checks if the dependencies have been cached with the hash of the package-lock.json file."
+
+runs:
+  using: "composite"
+  steps:
+    - name: "🔧 Setup"
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.9.0
+        cache: 'yarn'
+    - name: "💾 Cache dependencies"
+      uses: actions/cache@v4
+      id: cache-dependencies
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+    - name: "📦 Install"
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
+      run: npm install --ignore-scripts
+      shell: bash
