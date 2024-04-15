@@ -58,6 +58,18 @@ describe('when running the cli action', () => {
     expect(exitCode).toBe(ExitCodeEnum.FileReadError);
   });
 
+  it('should fail if the account does not exist', async () => {
+    // arrange
+    // act
+    const exitCode: ExitCodeEnum = await action({
+      ...defaultOptions,
+      accountId: 'unknown',
+    });
+
+    // assert
+    expect(exitCode).toBe(ExitCodeEnum.InvalidAccountID);
+  });
+
   it('should fail if the accounts JSON file is malformed', async () => {
     // arrange
     // act

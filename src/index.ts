@@ -6,6 +6,8 @@ import process from 'node:process';
 
 // actions
 import action from './action';
+
+// types
 import { ICommandOptions } from '@app/types';
 
 program
