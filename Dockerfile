@@ -31,15 +31,16 @@ RUN cd ./nearcore && make neard
 FROM ubuntu:22.04 AS runner
 
 RUN apt-get update -qq && apt-get install -y \
-    libssl-dev ca-certificates \
+    libssl-dev ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/app
 
 # copy the neard binary from the builder stage
-COPY --from=builder /usr/app/target/release/neard /usr/app/
+COPY --from=builder /usr/app/nearcore/target/release /usr/app/
 
-# initialize the node with credentials
-RUN neard --home ~/.near init --chain-id localnet
+# initialize a local node with credentials
+RUN ./neard --home ./.near init --chain-id localnet
 
-CMD ["/bin/sh", "-c", "neard --home ./.near run"]
+# start runnning the node
+CMD ["/bin/sh", "-c", "./neard --home ./.near run"]
