@@ -34,7 +34,7 @@ jobs:
       - name: "📝 Create .npmrc"
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.PUBLISH_PUBLIC_PACKAGES_TOKEN }}" >> .npmrc
-          echo "@jumpdex-sh:registry=https://registry.npmjs.org" >> .npmrc
+          echo "@jumpdex:registry=https://registry.npmjs.org" >> .npmrc
           echo "access=public" >> .npmrc
       - name: "📦 Setup npm Dependencies"
         uses: ./.github/actions/use-npm-dependencies
