@@ -24,7 +24,9 @@ program
     'An airdrop tool for NEP-141 tokens that is designed to shoot a number of tokens to an NFT allowlist (or any list), with the ability to shoot multiple allocations to specific addresses.'
   )
   .version(
+    /* eslint-disable @typescript-eslint/no-var-requires */
     require('../package.json').version,
+    /* eslint-disable @typescript-eslint/no-var-requires */
     '-v, --version',
     'output the current version'
   )

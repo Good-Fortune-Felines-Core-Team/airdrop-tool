@@ -83,12 +83,14 @@ export default async function transferToAccount({
           actions,
           utils.serialize.base_decode(blockHash) as Uint8Array
         );
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         const [_, signedTransaction] = await transactions.signTransaction(
           transaction,
           signerAccount.connection.signer,
           signerAccount.accountId,
           nearConnection.connection.networkId
         );
+        /* eslint-enable @typescript-eslint/no-unused-vars */
 
         const { transaction_outcome } =
           await signerAccount.connection.provider.sendTransaction(

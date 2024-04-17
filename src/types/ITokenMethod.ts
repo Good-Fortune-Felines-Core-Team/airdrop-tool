@@ -1,6 +1,8 @@
 interface ITokenMethod {
   ft_balance_of: (args: { account_id: string }) => Promise<string>;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   storage_balance_of: (args: { account_id: string }) => Promise<any>;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   ft_transfer: (args: {
     args: { receiver_id: string; amount: string };
     amount: string;

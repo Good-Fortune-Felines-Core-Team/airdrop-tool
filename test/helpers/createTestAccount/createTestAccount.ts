@@ -24,7 +24,9 @@ export default async function createTestAccount({
 
     // if the new account exists, return it
     return newAccount;
-  } catch (error) {}
+  } catch (error) {
+    // no account exists, create a new one
+  }
 
   // create the new account
   await creatorAccount.createAccount(
