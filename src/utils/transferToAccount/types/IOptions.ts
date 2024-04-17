@@ -9,6 +9,7 @@ interface IOptions extends IBaseOptions {
   amount: BN;
   blockHash: string;
   contract: ITokenContract;
+  maxRetries?: number;
   nearConnection: Near;
   nonce: number;
   receiverAccountId: string;

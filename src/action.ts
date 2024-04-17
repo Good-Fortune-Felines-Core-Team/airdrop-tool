@@ -2,8 +2,8 @@ import BN from 'bn.js';
 import { Account, Contract, Near } from 'near-api-js';
 import { PublicKey } from 'near-api-js/lib/utils';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { extname, join, parse, ParsedPath } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { extname } from 'node:path';
 
 // configs
 import { localnet, mainnet, testnet } from '@app/configs';
@@ -14,39 +14,36 @@ import { ExitCodeEnum } from '@app/enums';
 // types
 import type {
   IAccessKeyResponse,
-  ICommandOptions,
+  IActionOptions,
+  IActionResponse,
   IConfiguration,
   ITokenContract,
 } from '@app/types';
 
 // utils
-import createLogger, { ILogger } from '@app/utils/createLogger';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
 
 export default async function action({
   accountId,
-  accounts: transfersFilePath,
   amount,
-  network,
   credentials,
-  output,
+  logger,
+  maxRetries,
+  network,
   token,
-  verbose,
-}: ICommandOptions): Promise<ExitCodeEnum> {
-  const date: Date = new Date();
-  const logger: ILogger = createLogger(verbose ? 'debug' : 'error');
-  let completedTransfers: Record<string, string>;
+  transfersFilePath,
+}: IActionOptions): Promise<IActionResponse> {
+  const completedTransfers: Record<string, string> = {};
+  const failedTransfers: Record<string, string> = {};
   let configuration: IConfiguration;
   let contract: ITokenContract;
-  let failedTransfers: Record<string, string>;
   let nearConnection: Near;
   let nonce: number;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: PublicKey | null;
   let transfers: Record<string, string>;
-  let transfersParsedPath: ParsedPath;
 
   switch (network) {
     case 'localnet':
@@ -65,14 +62,22 @@ export default async function action({
   if (!existsSync(credentials)) {
     logger.error(`credentials directory at "${credentials}" does not exist`);
 
-    return ExitCodeEnum.DirectoryReadError;
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.DirectoryReadError,
+      failedTransfers,
+    };
   }
 
   // check if the list of accounts exists
   if (!existsSync(transfersFilePath)) {
     logger.error(`accounts file at "${transfersFilePath}" does not exist`);
 
-    return ExitCodeEnum.FileReadError;
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.FileReadError,
+      failedTransfers,
+    };
   }
 
   // throw an error if it is not a json file
@@ -80,21 +85,11 @@ export default async function action({
     logger.error(
       `expected the accounts file "${transfersFilePath}" to be a json file`
     );
-
-    return ExitCodeEnum.FileReadError;
-  }
-
-  // if the output directory doesn't exist, create it
-  if (!existsSync(output)) {
-    logger.debug(`"${output}" directory does not exist, creating it`);
-
-    try {
-      await mkdir(output);
-    } catch (error) {
-      logger.error(error);
-
-      return ExitCodeEnum.DirectoryWriteError;
-    }
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.FileReadError,
+      failedTransfers,
+    };
   }
 
   nearConnection = await createNearConnection({
@@ -111,7 +106,11 @@ export default async function action({
   if (!signerPublicKey) {
     logger.error(`invalid account "${accountId}"`);
 
-    return ExitCodeEnum.InvalidAccountID;
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InvalidAccountID,
+      failedTransfers,
+    };
   }
 
   signerAccessKey = await signer.connection.provider.query<IAccessKeyResponse>(
@@ -132,12 +131,14 @@ export default async function action({
       error
     );
 
-    return ExitCodeEnum.FileReadError;
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.FileReadError,
+      failedTransfers,
+    };
   }
 
-  completedTransfers = {};
-  failedTransfers = {};
-  nonce = ++signerAccessKey.nonce;
+  nonce = signerAccessKey.nonce + 1;
 
   logger.info(
     `starting transfers for ${Object.entries(transfers).length} accounts`
@@ -159,6 +160,7 @@ export default async function action({
       blockHash: signerAccessKey.block_hash,
       contract,
       logger,
+      maxRetries,
       nearConnection,
       nonce,
       receiverAccountId,
@@ -178,40 +180,11 @@ export default async function action({
     }
 
     completedTransfers[receiverAccountId] = multipler.toString();
-    nonce++;
+    nonce = nonce + 1;
 
     logger.info(
       `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" successful:`,
       transactionID
-    );
-  }
-
-  transfersParsedPath = parse(transfersFilePath);
-
-  // write the completed transfers to an output file
-  if (Object.entries(completedTransfers).length > 0) {
-    logger.debug(
-      `writing completed transfers to "${join(output, `${date.getTime()}-${transfersParsedPath.name}-completed.json`)}"`
-    );
-
-    await writeFile(
-      join(
-        output,
-        `${date.getTime()}-${transfersParsedPath.name}-completed.json`
-      ),
-      JSON.stringify(completedTransfers)
-    );
-  }
-
-  // write the failed transfers to an output file
-  if (Object.entries(failedTransfers).length > 0) {
-    logger.debug(
-      `writing failed transfers to "${join(output, `${date.getTime()}-${transfersParsedPath.name}-failed.json`)}"`
-    );
-
-    await writeFile(
-      join(output, `${date.getTime()}-${transfersParsedPath.name}-failed.json`),
-      JSON.stringify(failedTransfers)
     );
   }
 
@@ -220,5 +193,9 @@ export default async function action({
   );
   logger.info(`${Object.entries(failedTransfers).length} transfers failed`);
 
-  return ExitCodeEnum.Success;
+  return {
+    completedTransfers,
+    exitCode: ExitCodeEnum.Success,
+    failedTransfers,
+  };
 }

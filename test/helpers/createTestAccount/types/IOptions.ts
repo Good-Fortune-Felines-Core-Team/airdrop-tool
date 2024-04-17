@@ -3,8 +3,8 @@ import { Account, Near, utils } from 'near-api-js';
 
 interface IOptions {
   creatorAccount: Account;
-  connection: Near;
   initialBalanceInAtomicUnits?: BN;
+  nearConnection: Near;
   newAccountID: string;
   newAccountPublicKey: utils.PublicKey;
 }

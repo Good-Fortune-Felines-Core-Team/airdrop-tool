@@ -15,121 +15,188 @@ import { ExitCodeEnum } from '@app/enums';
 // helpers
 import convertNearToYoctoNear from '@test/utils/convertNearToYoctoNear';
 import createTestAccount from '@test/utils/createTestAccount';
-import deployToken, { ITokenMetadata } from '@test/utils/deployToken';
+import deployToken from '@test/utils/deployToken';
 
 // types
-import { ICommandOptions, TNetworkIDs } from '@app/types';
+import type { IActionResponse, IActionOptions, TNetworkIDs } from '@app/types';
 
 // utils
+import createLogger from '@app/utils/createLogger';
 import createNearConnection from '@app/utils/createNearConnection';
 
 describe('when running the cli action', () => {
+  const account1AccountID: string = 'account1.test.near';
+  const account2AccountID: string = 'account2.test.near';
   const creatorAccountID: string = 'test.near';
   const networkID: TNetworkIDs = 'localnet';
   const tokenAccountID: string = 'token.test.near';
-  let defaultOptions: ICommandOptions;
+  let defaultOptions: IActionOptions;
   let creatorAccount: Account;
+  let nearConnection: Near;
   let tokenAccount: Account;
-  let tokenMetadata: ITokenMetadata;
 
   beforeAll(async () => {
     const totalSupplyInAtomicUnits: BN = new BN('10').pow(new BN('34')); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
-    let connection: Near;
     let tokenPublicKey: utils.PublicKey;
 
     defaultOptions = {
       amount: '1',
-      accounts: resolve(cwd(), 'test', 'data', 'accounts.json'),
       accountId: creatorAccountID,
       credentials: resolve(cwd(), 'test', 'credentials'),
+      logger: createLogger('error'),
+      maxRetries: 0,
       network: networkID,
-      output: resolve(cwd(), '.jumpdex'),
-      token: '',
-      verbose: false,
+      token: tokenAccountID,
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
     };
-    connection = await createNearConnection({
+    nearConnection = await createNearConnection({
       ...localnet,
       credentialsDir: defaultOptions.credentials,
     });
-    creatorAccount = await connection.account(defaultOptions.accountId);
-    tokenPublicKey = await connection.connection.signer.getPublicKey(
+    creatorAccount = await nearConnection.account(defaultOptions.accountId);
+    tokenPublicKey = await nearConnection.connection.signer.getPublicKey(
       tokenAccountID,
       networkID
     );
     // create the token account
     tokenAccount = await createTestAccount({
       creatorAccount,
-      connection,
       initialBalanceInAtomicUnits: convertNearToYoctoNear(new BN('10')),
       newAccountID: tokenAccountID,
       newAccountPublicKey: tokenPublicKey,
+      nearConnection,
     });
-    tokenMetadata = await deployToken({
+
+    // deploy contract
+    await deployToken({
       creatorAccount,
       name: 'Awesome Token',
       symbol: 'AWST',
       tokenAccount,
       totalSupply: totalSupplyInAtomicUnits.toString(), // 10B in yoctoNEAR
     });
+    // create known accounts
+    await createTestAccount({
+      creatorAccount,
+      newAccountID: account1AccountID,
+      newAccountPublicKey: await nearConnection.connection.signer.getPublicKey(
+        account1AccountID,
+        networkID
+      ),
+      nearConnection,
+    });
+    await createTestAccount({
+      creatorAccount,
+      newAccountID: account2AccountID,
+      newAccountPublicKey: await nearConnection.connection.signer.getPublicKey(
+        account2AccountID,
+        networkID
+      ),
+      nearConnection,
+    });
   });
 
   it('should fail if no credentials exist at the specified path', async () => {
     // arrange
     // act
-    const exitCode: ExitCodeEnum = await action({
+    const response: IActionResponse = await action({
       ...defaultOptions,
       credentials: resolve(cwd(), 'test', 'unknown-dir'),
     });
 
     // assert
-    expect(exitCode).toBe(ExitCodeEnum.DirectoryReadError);
+    expect(response.exitCode).toBe(ExitCodeEnum.DirectoryReadError);
   });
 
   it('should fail if no accounts file does not exist', async () => {
     // arrange
     // act
-    const exitCode: ExitCodeEnum = await action({
+    const response: IActionResponse = await action({
       ...defaultOptions,
-      accounts: resolve(cwd(), 'test', 'data', 'unknown.json'),
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'unknown.json'),
     });
 
     // assert
-    expect(exitCode).toBe(ExitCodeEnum.FileReadError);
+    expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
   });
 
   it('should fail if the accounts file is not a json', async () => {
     // arrange
     // act
-    const exitCode: ExitCodeEnum = await action({
+    const response: IActionResponse = await action({
       ...defaultOptions,
-      accounts: resolve(cwd(), 'test', 'data', 'accounts.txt'),
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'invalid.txt'),
     });
 
     // assert
-    expect(exitCode).toBe(ExitCodeEnum.FileReadError);
+    expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
   });
 
   it('should fail if the account does not exist', async () => {
     // arrange
     // act
-    const exitCode: ExitCodeEnum = await action({
+    const response: IActionResponse = await action({
       ...defaultOptions,
       accountId: 'unknown',
     });
 
     // assert
-    expect(exitCode).toBe(ExitCodeEnum.InvalidAccountID);
+    expect(response.exitCode).toBe(ExitCodeEnum.InvalidAccountID);
   });
 
   it('should fail if the accounts JSON file is malformed', async () => {
     // arrange
     // act
-    const exitCode: ExitCodeEnum = await action({
+    const response: IActionResponse = await action({
       ...defaultOptions,
-      accounts: resolve(cwd(), 'test', 'data', 'malformed.json'),
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'malformed.json'),
     });
 
     // assert
-    expect(exitCode).toBe(ExitCodeEnum.FileReadError);
+    expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
+  });
+
+  it('should record failed transfers', async () => {
+    // arrange
+    // act
+    const response: IActionResponse = await action({
+      ...defaultOptions,
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'failure.json'),
+    });
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.Success);
+    expect(
+      Object.entries(response.completedTransfers).length
+    ).toBeLessThanOrEqual(0);
+    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["iNValIdaCCoUnTiD.test.near"]
+  });
+
+  it('should record success transfers', async () => {
+    // arrange
+    // act
+
+    const response: IActionResponse = await action(defaultOptions);
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.Success);
+    expect(Object.entries(response.completedTransfers).length).toBe(2); // ["account1.test.near", "account2.test.near"]
+    expect(Object.entries(response.failedTransfers).length).toBeLessThanOrEqual(
+      0
+    );
+  });
+
+  it('should record both success and failed transfers', async () => {
+    // arrange
+    // act
+    const response: IActionResponse = await action({
+      ...defaultOptions,
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'mixed.json'),
+    });
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.Success);
+    expect(Object.entries(response.completedTransfers).length).toBe(1); // ["account1.test.near"]
+    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["iNValIdaCCoUnTiD.test.near"]
   });
 });

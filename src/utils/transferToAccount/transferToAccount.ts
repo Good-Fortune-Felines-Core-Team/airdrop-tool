@@ -22,6 +22,7 @@ export default async function transferToAccount({
   nearConnection,
   nonce,
   receiverAccountId,
+  maxRetries = MAX_RETRIES,
   signerAccount,
   signerPublicKey,
 }: IOptions): Promise<string | null> {
@@ -101,10 +102,13 @@ export default async function transferToAccount({
       } catch (error) {
         logger.error('failed to send transfer:', error);
 
-        if (retries >= MAX_RETRIES) {
+        if (retries >= maxRetries) {
           logger.error(
             `maximum transfer retries reached, skipping transfer to account "${receiverAccountId}"`
           );
+
+          // clear the interval
+          clearInterval(timer);
 
           return resolve(null);
         }

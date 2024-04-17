@@ -1,11 +1,13 @@
-import { providers } from 'near-api-js';
-import { ExecutionError } from 'near-api-js/lib/providers/provider';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
 
 // types
-import type { IOptions, ITokenMetadata } from './types';
+import type { ITokenMetadata } from '@app/types';
+import type { IOptions } from './types';
+
+// utils
+import tokenMetadata from '../tokenMetadata';
 
 /**
  * Deploys the token factory contract to the token account and initializes the token.
@@ -23,10 +25,15 @@ export default async function deployToken({
   const contract = await readFile(
     resolve(cwd(), 'test', 'contracts', 'fungible_token_factory.wasm')
   );
-  let encodedMetadataSuccessResult: string | null;
-  let metadataErrorResult: ExecutionError | null;
-  let decodedMetadataResult: Buffer;
-  let metadataOutcome: providers.FinalExecutionOutcome;
+
+  try {
+    return await tokenMetadata({
+      tokenAccountID: tokenAccount.accountId,
+      viewAccount: creatorAccount,
+    });
+  } catch (error) {
+    // no token found, deploy a new one
+  }
 
   // deploy the account
   await tokenAccount.deployContract(contract);
@@ -47,29 +54,8 @@ export default async function deployToken({
     },
   });
 
-  // view the metadata
-  metadataOutcome = await creatorAccount.functionCall({
-    contractId: tokenAccount.accountId,
-    methodName: 'ft_metadata',
-    args: {},
+  return tokenMetadata({
+    tokenAccountID: tokenAccount.accountId,
+    viewAccount: creatorAccount,
   });
-  metadataErrorResult =
-    (metadataOutcome.status as providers.FinalExecutionStatus).Failure || null;
-  encodedMetadataSuccessResult =
-    (metadataOutcome.status as providers.FinalExecutionStatus).SuccessValue ||
-    null;
-
-  // if we don't have a success, we have an error
-  if (!encodedMetadataSuccessResult) {
-    throw new Error(
-      metadataErrorResult?.error_message ||
-        `failed to get metadata for token "${tokenAccount.accountId}"`
-    );
-  }
-
-  // decode the result from base64
-  decodedMetadataResult = Buffer.from(encodedMetadataSuccessResult, 'base64');
-
-  // encode in ut8 and then parse to a json
-  return JSON.parse(decodedMetadataResult.toString('utf8'));
 }
