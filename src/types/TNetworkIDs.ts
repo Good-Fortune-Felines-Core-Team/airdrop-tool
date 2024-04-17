@@ -1,3 +1,3 @@
-type TNetworkIDs = 'local' | 'mainnet' | 'testnet';
+type TNetworkIDs = 'localnet' | 'mainnet' | 'testnet';
 
 export default TNetworkIDs;

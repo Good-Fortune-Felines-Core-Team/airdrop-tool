@@ -6,7 +6,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { extname, join, parse, ParsedPath } from 'node:path';
 
 // configs
-import { local, mainnet, testnet } from '@app/configs';
+import { localnet, mainnet, testnet } from '@app/configs';
 
 // enums
 import { ExitCodeEnum } from '@app/enums';
@@ -49,8 +49,8 @@ export default async function action({
   let transfersParsedPath: ParsedPath;
 
   switch (network) {
-    case 'local':
-      configuration = local;
+    case 'localnet':
+      configuration = localnet;
       break;
     case 'testnet':
       configuration = testnet;

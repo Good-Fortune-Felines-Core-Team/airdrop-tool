@@ -24,7 +24,9 @@
             "@app/constants": ["src/constants"],
             "@app/enums": ["src/enums"],
             "@app/types": ["src/types"],
-            "@app/utils/*": ["src/utils/*"]
+            "@app/utils/*": ["src/utils/*"],
+            "@test/data/*": ["test/data/*"],
+            "@test/utils/*": ["test/helpers/*"]
         },
         "removeComments": false,
         "resolveJsonModule": true,
