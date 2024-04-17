@@ -1,0 +1,67 @@
+import TOCInline from '@theme/TOCInline';
+
+# CLI Options
+
+The `airdrop-tool` command line has a number of useful options. You can run `airdrop-tool --help` to view all available options. Many of the options shown below can also be used together to the airdrop exactly the way you want.
+
+## Reference
+
+<TOCInline
+  maxHeadingLevel={4}
+  toc={toc}
+/>
+
+### Required
+
+#### `--accountId=<account>`
+
+The signer account ID that will be used to authorized to airdrop the tokens.
+
+#### `--accounts=<path>`
+
+The path to the JSON file that contains a list of accounts and number of NFTs the account holds. The number will be used to multiply the tokens.
+
+Each entry in the JSON file must conform to the below structure:
+
+```json
+{
+    "account1.near": "3",
+    "account2.near": "1"
+}
+```
+
+:::caution
+
+The file **MUST** be a JSON file the file **MUST** be in the same format as the above example, otherwise an error will be thrown.
+
+:::
+
+#### `--amount=<number>`
+
+The amount of tokens (in atomic units, i.e. if the token has 6 decimals, and you want to send 1 token, you should use 1000000) to airdrop
+
+### Optional
+
+#### `--credentials=<path>`
+
+The path to the directory that contains the credentials for the account specified in "accountId".
+
+Default: `~/.near-credentials`
+
+#### `--network=<network>`
+
+The target network.
+
+Default: `mainnet`
+
+#### `--output=<path>`
+
+The directory to output the completed transfers. This directory will be used for both the completed transfers and any failed transfers.
+
+Completed transfers will be in a file named `{timestamp}-{accounts-file-name}-completed.json`, and any failed transfers will be in a file named `{YYYY-MM-DD-HH-MM-SS}-{accounts-file-name}-failed.json`.
+
+Default: `~/.jumpdex`
+
+#### `--verbose`
+
+Logs extra information.

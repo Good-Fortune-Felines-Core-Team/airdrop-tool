@@ -1,74 +1,158 @@
-# airdrop-tool
-Airdrop tool for nep-141 tokens designed to shoot a number of tokens to an NFT whitelist (or any list) with the baility to shoot multiple allocations to specific addresses.
+<h1 align="center">
+  Airdrop Tool
+</h1>
 
-1. Install Visual studio
+<p align="center">
+  <a href="https://github.com/Jump-Dex/airdrop-tool/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Jump-Dex/airdrop-tool?&logo=github">
+  </a>
+  <a href="https://github.com/Jump-Dex/airdrop-tool/releases/latest">
+    <img alt="GitHub Release Date - Published At" src="https://img.shields.io/github/release-date/Jump-Dex/airdrop-tool?logo=github">
+  </a>
+</p>
 
-- https://code.visualstudio.com/ 
+<p align="center">
+  <a href="https://github.com/Jump-Dex/airdrop-tool/releases">
+    <img alt="GitHub Pre-release" src="https://img.shields.io/github/v/release/Jump-Dex/airdrop-tool?include_prereleases&label=pre-release&logo=github">
+  </a>
+  <a href="https://github.com/Jump-Dex/airdrop-tool/releases">
+    <img alt="GitHub Pre-release Date - Published At" src="https://img.shields.io/github/release-date-pre/Jump-Dex/airdrop-tool?label=pre-release date&logo=github">
+  </a>
+</p>
 
-2. Install Near CLI
+<p align="center">
+  <a href="https://github.com/Jump-Dex/airdrop-tool/blob/main/LICENSE">
+    <img alt="GitHub License" src="https://img.shields.io/github/license/Jump-Dex/airdrop-tool">
+  </a>
+</p>
 
-- Run npm install -g near-cli
+<p align="center">
+  <a href="https://npmjs.com/package/@jumpdex/airdrop-tool" target="_blank">
+    <img src="https://img.shields.io/npm/v/@jumpdex/airdrop-tool" alt="npm" />
+  </a>
+</p>
 
-3. Make sure you are on mainnet
+<p align="center">
+  An airdrop tool for NEP-141 tokens that is designed to shoot a number of tokens to an NFT allowlist (or any list), with the ability to shoot multiple allocations to specific addresses.
+</p>
 
-- Run the Export to mainnet command
-- Windows: Run  set NEAR_NETWORK=mainnet
-- Mac: Run export NEAR_ENV=mainnet
+### Table of contents
 
-4. Log into the Near wallet you will wish to airdrop tokens from to store private key on computer (this allows you to run calls, make sure you understand security risks). 
+* [1. Installation](#-1-installation)
+* [2. Documentation](#-2-documentation)
+* [3. Development](#-3-development)
+    * [3.1. Requirements](#31-requirements)
+    * [3.2. Setup](#32-setup)
+    * [3.3. Running In Development Mode](#33-running-in-development-mode)
+* [4. Testing](#-4-testing)
+  * [4.1. Requirements](#41-requirements)
+  * [4.1. Running Tests](#42-running-tests)
+* [5. Appendix](#-5-appendix)
+    * [5.1. Useful Commands](#51-useful-commands)
+* [6. How To Contribute](#-6-how-to-contribute)
+* [7. License](#-7-license)
 
-- Make sure you have the token you wish to send on this account.
+## 📦 1. Installation
 
-- Run **near login** 
+* Using npm:
+```shell
+npm install @jumpdex/airdrop-tool
+```
 
-- Run **near login --walletUrl https://app.mynearwallet.com/**
+* Using yarn:
+```shell
+yarn add @jumpdex/airdrop-tool
+```
 
-- Can login with meteor wallet if you prefer
+## 📚 2. Documentation
 
-- Run **near login --walletUrl https://wallet.meteorwallet.app/**  
+For full documentation, please see [here][documentation].
 
-5. Download the zip from this github repository and unzip.
+<sup>[Back to top ^][table-of-contents]</sup>
 
-- Select the airdrop-tool-windows folder for windows or the airdrop-tool-mac folder for Mac then place it in a location you can easily navigate to.
+## 🛠 3. Development
 
-6. To change token that the airdrop tool sends, navigate to:
+### 3.1. Requirements
 
-- airdrop-tool>Src
+* Install [Node v20.9.0+][node]
 
-- Open the index.ts file with vscode.
+<sup>[Back to top ^][table-of-contents]</sup>
 
-- Go to line 58 and input token address of the token you wish to send (it's set to JUMP token currently)
+### 3.2. Setup
 
-7. Create a new text file to compose the list the tool will airdrop tokens to and, place into data folder.
+Install the dependencies:
+```bash
+$ npm install
+```
 
-- Make sure the parsing of the list is named appropriately, and looks like this:
+<sup>[Back to top ^][table-of-contents]</sup>
 
-- {"test.near":1,"test2.near":1}
+### 3.3. Running In Development Mode
 
-- The 1 denotes how many airdrops they get, if you put 2 and in the token amount later, it will send them 2 X TOKEN AMOUNT
+* To run the CLI in development mode, simply run the npm script:
+```bash
+$ npm start -- --help
+```
 
-- When you run the name of the list, it will move to the finished folder, send to all addresses and record errors in the error folder.
+> ⚠️ **NOTE:** In order to not conflict with npm's arguments, you must use the `--` between `start` and CLI flags.
 
-- List needs to be less than 500-1000 names. It could possibly error if transaction is too big.
+<sup>[Back to top ^][table-of-contents]</sup>
 
-8. Cd into airdrop-tool or airdrop-tool-mac folder we just unzipped (put in desktop for easy access)
+## 🧪 4. Testing
 
-- **cd desktop** (cd .. to go back)
+### 4.1. Requirements
 
-- **cd airdrop-tool-mac** (or whatever the folder name is)
+* Install [Docker][docker]
+* Install [Docker Compose v2.5.0+][docker-compose]
 
-9. Once successfully navigated to folder, run the following code into terminal to download node modules, and start the script which deploys token and sets the meta data:
+<sup>[Back to top ^][table-of-contents]</sup>
 
-- Run **npm install**
+### 4.2. Running Tests
 
-- Then
+The test script begins by building and starting a local Near network using the credentials in [`.near`](./.near). Once this has started, the tests are run against this local validator node.
 
-- Run **npm run dev**
+> ⚠️ **NOTE:** As the local network contains one validator node, all blocks are handled by this validator.
 
-10. Follow the prompts, when you enter the token amount, MAKE SURE YOU USE PROPER DECIMAL AMOUNTS
+Within this local network, account IDs will fave the suffix of `.test.near`, i.e. `myaccount.test.near`.
 
-- If JUMP token has 18 decimals, then 1 Jump is inputted as 1000000000000000000
+The main account (`.test.near`), whose credentials are stored at [`./test/credentials`](./test/credentials), can be used as a faucet or to deploy contracts.
 
-- This rule applies for whatever token you are using as long as you use correct decimals for that token
+<sup>[Back to top ^][table-of-contents]</sup>
 
-NOTE: MAKE SURE TOKENS ARE ENTERED CORRECTLY.
+## 📑 5. Appendix
+
+### 5.1. Useful Commands
+
+| Command              | Description                                                                        |
+|----------------------|------------------------------------------------------------------------------------|
+| `npm run build`      | Builds the source code into the `dist/` directory.                                 |
+| `npm run docs:build` | Builds the documentation into the `.docusaurus/` directory.                        |
+| `npm run docs:serve` | Serves the built documentation from the `.docusaurus/` directory.                  |
+| `npm run docs:start` | Builds and runs the documentation in a development environment with hot reloading. |
+| `npm run lint`       | Runs the linter on `.js` and `.ts` files.                                          |
+| `npm run prettier`   | Runs the prettier on `.js` and `.ts` files.                                        |
+| `npm start`          | Runs the CLI in development mode.                                                  |
+| `npm test`           | Spins up a local Near node and runs tests against it.                              |
+
+<sup>[Back to top ^][table-of-contents]</sup>
+
+## 👏 6. How To Contribute
+
+Please read the [**Contributing Guide**][contribute] to learn about the development process.
+
+<sup>[Back to top ^][table-of-contents]</sup>
+
+## 📄 7. License
+
+Please refer to the [LICENSE][license] file.
+
+<sup>[Back to top ^][table-of-contents]</sup>
+
+<!-- Links -->
+[contribute]: ./CONTRIBUTING.md
+[docker]: https://docs.docker.com/get-docker/
+[docker-compose]: https://docs.docker.com/compose/install/
+[documentation]: http://jump-dex.github.io/airdrop-tool
+[license]: ./LICENSE
+[node]: https://nodejs.org/en/
+[table-of-contents]: #table-of-contents

@@ -1,0 +1,70 @@
+name: "Pull Request Checks"
+
+on:
+  pull_request:
+
+jobs:
+  ##
+  # install
+  ##
+
+  install:
+    name: "Install"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+
+  ##
+  # lint, build documentation, build package and test
+  ##
+
+  lint:
+    name: "Lint"
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+      - name: "👕 Lint"
+        run: npm run lint
+
+  build_documentation:
+    name: "Build Documentation"
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+      - name: "🏗️ Build"
+        run: npm run docs:build
+
+  build_package:
+    name: "Build Package"
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+      - name: "🏗️ Build"
+        run: npm run build
+
+  test:
+    name: "Test"
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🛎 Checkout"
+        uses: actions/checkout@v4
+      - name: "📦 Setup npm Dependencies"
+        uses: ./.github/actions/use-npm-dependencies
+      - name: "🧪 Test"
+        run: npm run test

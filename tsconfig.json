@@ -1,0 +1,44 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "allowUnreachableCode": false,
+        "alwaysStrict": true,
+        "baseUrl": "./",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true,
+        "emitDecoratorMetadata": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "incremental": true,
+        "lib": ["ESNext"],
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "noFallthroughCasesInSwitch": false,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "paths": {
+            "@app/configs": ["src/configs"],
+            "@app/constants": ["src/constants"],
+            "@app/enums": ["src/enums"],
+            "@app/types": ["src/types"],
+            "@app/utils/*": ["src/utils/*"],
+            "@test/data/*": ["test/data/*"],
+            "@test/utils/*": ["test/helpers/*"]
+        },
+        "removeComments": false,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": false,
+        "strictBindCallApply": false,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": false,
+        "target": "ES5"
+    },
+    "ts-node": {
+        "require": ["tsconfig-paths/register"]
+    }
+}
