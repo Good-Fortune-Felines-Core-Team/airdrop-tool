@@ -31,5 +31,5 @@ jobs:
         with:
           github_token: ${{ secrets.WRITE_REPOS_TOKEN }}
           publish_dir: ./.docs
-          user_name: jumpdex-bot
+          user_name: jumpdefi-bot
           user_email: tech@jumpdefi.xyz

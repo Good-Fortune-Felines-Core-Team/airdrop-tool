@@ -4,13 +4,13 @@ services:
   near_node:
     build:
       context: .
-    container_name: jumpdex_near_node
+    container_name: jumpdefi_near_node
     healthcheck:
       interval: 5s
       retries: 3
       start_period: 5s
       test: ["CMD", "curl", "-f", "http://127.0.0.1:3030/status"]
-    image: jumpdex/near-node
+    image: jumpdefi/near-node
     ports:
       - "3030:3030"
       - "24567:24567"

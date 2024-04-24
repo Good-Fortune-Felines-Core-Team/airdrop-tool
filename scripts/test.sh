@@ -24,7 +24,7 @@ function main {
 
   # start the services
   docker compose \
-    -p jumpdex_airdroptool_test \
+    -p jumpdefi_airdroptool_test \
     -f docker-compose.yml \
     up \
     --build \
@@ -36,7 +36,7 @@ function main {
 
     printf "%b waiting for healthchecks, attempt: %b...\n" "${INFO_PREFIX}" "${attempt}"
 
-    near_node_health=$(docker inspect -f "{{.State.Health.Status}}" jumpdex_near_node)
+    near_node_health=$(docker inspect -f "{{.State.Health.Status}}" jumpdefi_near_node)
 
     if [[ "${near_node_health}" == "unhealthy" ]]; then
       printf "%b healthchecks failed\n" "${ERROR_PREFIX}"
@@ -50,7 +50,7 @@ function main {
     attempt=$(( attempt + 1 ))
   done
 
-  printf "%b jumpdex_near_node=%b\n" "${INFO_PREFIX}" "${near_node_health}"
+  printf "%b jumpdefi_near_node=%b\n" "${INFO_PREFIX}" "${near_node_health}"
 
   # if the services are up and running, we can run tests
   if [[ "${near_node_health}" == "healthy" ]]; then
@@ -58,14 +58,14 @@ function main {
 
     exit_code=$?
   else
-    docker logs --details jumpdex_near_node
+    docker logs --details jumpdefi_near_node
 
     exit_code=1
   fi
 
   # stop the services and remove
   docker compose \
-    -p jumpdex_airdroptool_test \
+    -p jumpdefi_airdroptool_test \
     -f docker-compose.yml \
     down
 

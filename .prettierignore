@@ -1,5 +1,6 @@
 .docs/
 .docusaurus/
+.jumpdefi/
 dist/
 coverage/
 node_modules/
