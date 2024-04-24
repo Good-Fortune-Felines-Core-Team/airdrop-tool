@@ -11,7 +11,8 @@ const scriptsDir = path.resolve(docsDir, 'scripts');
 const stylesDir = path.resolve(docsDir, 'styles');
 
 // links
-const githubLink = 'https://github.com/jump-dex/airdrop-tool';
+const githubLink =
+  'https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool';
 const npmLink = 'https://npmjs.com/package/@jumpdefi/airdrop-tool';
 const url = 'https://good-fortune-felines-core-team.github.io';
 
