@@ -11,9 +11,9 @@ const scriptsDir = path.resolve(docsDir, 'scripts');
 const stylesDir = path.resolve(docsDir, 'styles');
 
 // links
-const githubLink = 'https://github.com/Jump-Dex/airdrop-tool';
-const npmLink = 'https://npmjs.com/package/@jumpdex/airdrop-tool';
-const url = 'https://jump-dex.github.io';
+const githubLink = 'https://github.com/jump-dex/airdrop-tool';
+const npmLink = 'https://npmjs.com/package/@jumpdefi/airdrop-tool';
+const url = 'https://good-fortune-felines-core-team.github.io';
 
 // header
 const tagline =
@@ -32,7 +32,7 @@ const config = {
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
-  organizationName: 'Jump-Dex',
+  organizationName: 'Good-Fortune-Felines-Core-Team',
   projectName: 'airdrop-tool',
   plugins: ['docusaurus-plugin-sass'],
   presets: [

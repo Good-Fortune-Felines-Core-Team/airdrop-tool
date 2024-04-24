@@ -2,6 +2,7 @@
 .docusaurus/
 .git/
 .idea/
+.jumpdefi/
 .temp/
 .vscode/
 dist/

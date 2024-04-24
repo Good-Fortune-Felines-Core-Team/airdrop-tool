@@ -1,5 +1,5 @@
 {
-    "name": "@jumpdex/airdrop-tool",
+    "name": "@jumpdefi/airdrop-tool",
     "version": "1.0.0",
     "description": "An airdrop tool for NEP-141 tokens that is designed to shoot a number of tokens to an NFT allowlist (or any list), with the ability to shoot multiple allocations to specific addresses.",
     "main": "dist/index.js",
@@ -11,7 +11,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/Jump-Dex/airdrop-tool"
+        "url": "https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool"
     },
     "license": "MIT",
     "keywords": [

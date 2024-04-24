@@ -3,32 +3,32 @@
 </h1>
 
 <p align="center">
-  <a href="https://github.com/Jump-Dex/airdrop-tool/releases/latest">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Jump-Dex/airdrop-tool?&logo=github">
+  <a href="https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/Good-Fortune-Felines-Core-Team/airdrop-tool?&logo=github">
   </a>
-  <a href="https://github.com/Jump-Dex/airdrop-tool/releases/latest">
-    <img alt="GitHub Release Date - Published At" src="https://img.shields.io/github/release-date/Jump-Dex/airdrop-tool?logo=github">
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/Jump-Dex/airdrop-tool/releases">
-    <img alt="GitHub Pre-release" src="https://img.shields.io/github/v/release/Jump-Dex/airdrop-tool?include_prereleases&label=pre-release&logo=github">
-  </a>
-  <a href="https://github.com/Jump-Dex/airdrop-tool/releases">
-    <img alt="GitHub Pre-release Date - Published At" src="https://img.shields.io/github/release-date-pre/Jump-Dex/airdrop-tool?label=pre-release date&logo=github">
+  <a href="https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/releases/latest">
+    <img alt="GitHub Release Date - Published At" src="https://img.shields.io/github/release-date/Good-Fortune-Felines-Core-Team/airdrop-tool?logo=github">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Jump-Dex/airdrop-tool/blob/main/LICENSE">
-    <img alt="GitHub License" src="https://img.shields.io/github/license/Jump-Dex/airdrop-tool">
+  <a href="https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/releases">
+    <img alt="GitHub Pre-release" src="https://img.shields.io/github/v/release/Good-Fortune-Felines-Core-Team/airdrop-tool?include_prereleases&label=pre-release&logo=github">
+  </a>
+  <a href="https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/releases">
+    <img alt="GitHub Pre-release Date - Published At" src="https://img.shields.io/github/release-date-pre/Good-Fortune-Felines-Core-Team/airdrop-tool?label=pre-release date&logo=github">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://npmjs.com/package/@jumpdex/airdrop-tool" target="_blank">
-    <img src="https://img.shields.io/npm/v/@jumpdex/airdrop-tool" alt="npm" />
+  <a href="https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/blob/main/LICENSE">
+    <img alt="GitHub License" src="https://img.shields.io/github/license/Good-Fortune-Felines-Core-Team/airdrop-tool">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://npmjs.com/package/@jumpdefi/airdrop-tool" target="_blank">
+    <img src="https://img.shields.io/npm/v/@jumpdefi/airdrop-tool" alt="npm" />
   </a>
 </p>
 
@@ -56,12 +56,12 @@
 
 * Using npm:
 ```shell
-npm install @jumpdex/airdrop-tool
+npm install @jumpdefi/airdrop-tool
 ```
 
 * Using yarn:
 ```shell
-yarn add @jumpdex/airdrop-tool
+yarn add @jumpdefi/airdrop-tool
 ```
 
 ## 📚 2. Documentation
@@ -152,7 +152,7 @@ Please refer to the [LICENSE][license] file.
 [contribute]: ./CONTRIBUTING.md
 [docker]: https://docs.docker.com/get-docker/
 [docker-compose]: https://docs.docker.com/compose/install/
-[documentation]: http://jump-dex.github.io/airdrop-tool
+[documentation]: https://good-fortune-felines-core-team.github.io/airdrop-tool
 [license]: ./LICENSE
 [node]: https://nodejs.org/en/
 [table-of-contents]: #table-of-contents

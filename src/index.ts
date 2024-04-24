@@ -51,7 +51,7 @@ program
   .option(
     '-o, --output',
     'the directory to output the completed transfers',
-    join(homedir(), '.jumpdex')
+    join(homedir(), '.jumpdefi')
   )
   .option('--verbose', 'logs extra information', false)
   .requiredOption('--token <token>', 'the address of the token to airdrop')
