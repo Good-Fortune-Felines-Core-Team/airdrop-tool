@@ -75,6 +75,9 @@ For full documentation, please see [here][documentation].
 ### 3.1. Requirements
 
 * Install [Node v20.9.0+][node]
+* Install [Git Large File Storage][git-large-file-storage]
+
+> ⚠️ **NOTE:** Git Large File Storage (`git lfs`) is needed to download the Near node build file as it is >50Mb and is stored on a remote server.
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
@@ -153,6 +156,7 @@ Please refer to the [LICENSE][license] file.
 [docker]: https://docs.docker.com/get-docker/
 [docker-compose]: https://docs.docker.com/compose/install/
 [documentation]: https://good-fortune-felines-core-team.github.io/airdrop-tool
+[git-large-file-storage]: https://git-lfs.com/
 [license]: ./LICENSE
 [node]: https://nodejs.org/en/
 [table-of-contents]: #table-of-contents

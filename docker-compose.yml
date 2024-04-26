@@ -22,4 +22,3 @@ services:
       - ./.near/validator_key.json:/usr/app/.near/validator_key.json:cached
       # node build
       - ./.near/neard:/usr/app/neard:cached
-      - ./.near/neard.d:/usr/app/neard.d:cached
