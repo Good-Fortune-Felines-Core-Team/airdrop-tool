@@ -24,7 +24,7 @@
         "node": ">=20.9.0"
     },
     "scripts": {
-        "build": "tsc -b tsconfig.build.json",
+        "build": "rm -rf dist && tspc --build tsconfig.build.json",
         "docs:build": "docusaurus build --out-dir .docs",
         "docs:serve": "docusaurus serve --dir .docs --no-open",
         "docs:start": "docusaurus start --no-open --port 8080",
@@ -71,11 +71,12 @@
         "sass": "^1.70.0",
         "ts-jest": "^29.1.2",
         "ts-node": "^10.9.2",
+        "ts-patch": "^3.1.2",
         "tsconfig-paths": "^4.2.0",
-        "typescript": "^4.9.4"
+        "typescript": "^5.4.5",
+        "typescript-transform-paths": "^3.4.7"
     },
     "dependencies": {
-        "add": "^2.0.6",
         "bn.js": "^5.2.1",
         "chalk": "^4.1.2",
         "commander": "^12.0.0",

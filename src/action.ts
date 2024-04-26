@@ -34,6 +34,7 @@ export default async function action({
   token,
   transfersFilePath,
 }: IActionOptions): Promise<IActionResponse> {
+  const { validateAccountId } = await import('near-sdk-js/lib/utils.js');
   const completedTransfers: Record<string, string> = {};
   const failedTransfers: Record<string, string> = {};
   let configuration: IConfiguration;
@@ -56,6 +57,16 @@ export default async function action({
     default:
       configuration = mainnet;
       break;
+  }
+
+  if (!validateAccountId(accountId)) {
+    logger.error(`account "${accountId}" is not a valid account id`);
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InvalidAccountID,
+      failedTransfers,
+    };
   }
 
   // check if the credentials directory exists
@@ -104,11 +115,11 @@ export default async function action({
 
   // if no public key can be found, the account is invalid
   if (!signerPublicKey) {
-    logger.error(`invalid account "${accountId}"`);
+    logger.error(`account "${accountId}" doesn't exist in "${credentials}"`);
 
     return {
       completedTransfers,
-      exitCode: ExitCodeEnum.InvalidAccountID,
+      exitCode: ExitCodeEnum.AccountNotKnown,
       failedTransfers,
     };
   }
@@ -150,6 +161,15 @@ export default async function action({
     const multipler = new BN(receiverMultiplier);
     const transferAmount = multipler.mul(new BN(amount));
     let transactionID: string | null;
+
+    // check if the account id is valid
+    if (validateAccountId(receiverAccountId)) {
+      logger.error(`account "${receiverAccountId}" invalid`);
+
+      failedTransfers[receiverAccountId] = multipler.toString();
+
+      continue;
+    }
 
     logger.info(
       `transferring "${transferAmount.toString()}" to account "${receiverAccountId}"`
