@@ -21,6 +21,7 @@ import type {
 } from '@app/types';
 
 // utils
+import accountAccessKey from '@app/utils/accountAccessKey';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
@@ -40,10 +41,10 @@ export default async function action({
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
-  let nonce: number;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: PublicKey | null;
+  let transactionID: string | null;
   let transfers: Record<string, string>;
 
   switch (network) {
@@ -59,6 +60,7 @@ export default async function action({
       break;
   }
 
+  // check if the sender account id is valid
   if (!validateAccountID(accountId)) {
     logger.error(`account "${accountId}" is not a valid account id`);
 
@@ -124,10 +126,7 @@ export default async function action({
     };
   }
 
-  signerAccessKey = await signer.connection.provider.query<IAccessKeyResponse>(
-    `access_key/${signer.accountId}/${signerPublicKey.toString()}`,
-    ''
-  );
+  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
   contract = new Contract(signer, token, {
     viewMethods: ['ft_balance_of', 'storage_balance_of'],
     changeMethods: ['ft_transfer', 'storage_deposit'],
@@ -149,8 +148,6 @@ export default async function action({
     };
   }
 
-  nonce = signerAccessKey.nonce + 1;
-
   logger.info(
     `starting transfers for ${Object.entries(transfers).length} accounts`
   );
@@ -160,10 +157,9 @@ export default async function action({
       Object.entries(transfers)[index];
     const multipler = new BN(receiverMultiplier);
     const transferAmount = multipler.mul(new BN(amount));
-    let transactionID: string | null;
 
-    // check if the account id is valid
-    if (validateAccountID(receiverAccountId)) {
+    // check if the receiver account id is valid
+    if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
       failedTransfers[receiverAccountId] = multipler.toString();
@@ -175,6 +171,8 @@ export default async function action({
       `transferring "${transferAmount.toString()}" to account "${receiverAccountId}"`
     );
 
+    // get the signer's access key, as it has been used
+    signerAccessKey = await accountAccessKey(signer, signerPublicKey);
     transactionID = await transferToAccount({
       amount: transferAmount,
       blockHash: signerAccessKey.block_hash,
@@ -182,7 +180,7 @@ export default async function action({
       logger,
       maxRetries,
       nearConnection,
-      nonce,
+      nonce: signerAccessKey.nonce + 1, // increment the nonce as it has been used
       receiverAccountId,
       signerPublicKey,
       signerAccount: signer,
@@ -200,7 +198,6 @@ export default async function action({
     }
 
     completedTransfers[receiverAccountId] = multipler.toString();
-    nonce = nonce + 1;
 
     logger.info(
       `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" successful:`,

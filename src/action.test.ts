@@ -181,7 +181,7 @@ describe('when running the cli action', () => {
     expect(
       Object.entries(response.completedTransfers).length
     ).toBeLessThanOrEqual(0);
-    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["iNValIdaCCoUnTiD.test.near"]
+    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["'$$%^^)(.test.near"]
   });
 
   it('should record success transfers', async () => {
@@ -192,7 +192,7 @@ describe('when running the cli action', () => {
 
     // assert
     expect(response.exitCode).toBe(ExitCodeEnum.Success);
-    expect(Object.entries(response.completedTransfers).length).toBe(2); // ["account1.test.near", "account2.test.near"]
+    expect(Object.entries(response.completedTransfers).length).toBe(10);
     expect(Object.entries(response.failedTransfers).length).toBeLessThanOrEqual(
       0
     );
@@ -209,6 +209,6 @@ describe('when running the cli action', () => {
     // assert
     expect(response.exitCode).toBe(ExitCodeEnum.Success);
     expect(Object.entries(response.completedTransfers).length).toBe(1); // ["account1.test.near"]
-    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["iNValIdaCCoUnTiD.test.near"]
+    expect(Object.entries(response.failedTransfers).length).toBe(1); // ["'$$%^^)(.test.near"]
   });
 });

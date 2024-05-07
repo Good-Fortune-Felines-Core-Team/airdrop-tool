@@ -26,12 +26,11 @@ export default async function transferToAccount({
   signerAccount,
   signerPublicKey,
 }: IOptions): Promise<string | null> {
-  let retries = 0;
-
   return new Promise<string | null>((resolve) => {
     const timer = setInterval(async () => {
       const gasFee = new BN(GAS_FEE_IN_ATOMIC_UNITS);
       let actions: Action[] = [];
+      let retries = 0;
       let transaction: Transaction;
 
       try {
