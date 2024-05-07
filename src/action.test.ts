@@ -96,6 +96,18 @@ describe('when running the cli action', () => {
     });
   });
 
+  it('should fail if the supplied account id is invalid', async () => {
+    // arrange
+    // act
+    const response: IActionResponse = await action({
+      ...defaultOptions,
+      accountId: '$$%^^)(.near',
+    });
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.InvalidAccountID);
+  });
+
   it('should fail if no credentials exist at the specified path', async () => {
     // arrange
     // act
@@ -132,7 +144,7 @@ describe('when running the cli action', () => {
     expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
   });
 
-  it('should fail if the account does not exist', async () => {
+  it('should fail if the sender account does not exist in the credentials', async () => {
     // arrange
     // act
     const response: IActionResponse = await action({
@@ -141,7 +153,7 @@ describe('when running the cli action', () => {
     });
 
     // assert
-    expect(response.exitCode).toBe(ExitCodeEnum.InvalidAccountID);
+    expect(response.exitCode).toBe(ExitCodeEnum.AccountNotKnown);
   });
 
   it('should fail if the accounts JSON file is malformed', async () => {
