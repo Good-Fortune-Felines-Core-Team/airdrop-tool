@@ -21,6 +21,7 @@ import type {
 } from '@app/types';
 
 // utils
+import accountAccessKey from '@app/utils/accountAccessKey';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
@@ -40,7 +41,6 @@ export default async function action({
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
-  let nonce: number;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: PublicKey | null;
@@ -125,10 +125,7 @@ export default async function action({
     };
   }
 
-  signerAccessKey = await signer.connection.provider.query<IAccessKeyResponse>(
-    `access_key/${signer.accountId}/${signerPublicKey.toString()}`,
-    ''
-  );
+  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
   contract = new Contract(signer, token, {
     viewMethods: ['ft_balance_of', 'storage_balance_of'],
     changeMethods: ['ft_transfer', 'storage_deposit'],
@@ -176,6 +173,9 @@ export default async function action({
       `transferring "${transferAmount.toString()}" to account "${receiverAccountId}"`
     );
 
+    // get the signer's access key, as it has been used
+    signerAccessKey = await accountAccessKey(signer, signerPublicKey);
+
     const { retries, transactionID } = await transferToAccount({
       amount: transferAmount,
       blockHash: signerAccessKey.block_hash,
@@ -183,14 +183,11 @@ export default async function action({
       logger,
       maxRetries,
       nearConnection,
-      nonce,
+      nonce: signerAccessKey.nonce + 1, // increment the nonce as it has been used
       receiverAccountId,
       signerPublicKey,
       signerAccount: signer,
     });
-
-    // increment the nonce as it has been used
-    nonce = nonce + retries + 1;
 
     // if we have no transaction id, the transfer has failed
     if (!transactionID) {
