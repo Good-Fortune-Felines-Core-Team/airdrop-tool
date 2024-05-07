@@ -1,3 +1,10 @@
+## [1.0.1-beta.2](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.1-beta.1...v1.0.1-beta.2) (2024-05-07)
+
+
+### Bug Fixes
+
+* nonce correctly determined ([#5](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/issues/5)) ([310590d](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/commit/310590d530d2b05d47554bf1c9b3ce6d5a74d78f))
+
 ## [1.0.1-beta.1](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.0...v1.0.1-beta.1) (2024-05-07)
 
 
