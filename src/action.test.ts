@@ -13,7 +13,6 @@ import { localnet } from '@app/configs';
 import { ExitCodeEnum } from '@app/enums';
 
 // helpers
-import convertNearToYoctoNear from '@test/utils/convertNearToYoctoNear';
 import createTestAccount from '@test/utils/createTestAccount';
 import deployToken from '@test/utils/deployToken';
 
@@ -21,6 +20,7 @@ import deployToken from '@test/utils/deployToken';
 import type { IActionResponse, IActionOptions, TNetworkIDs } from '@app/types';
 
 // utils
+import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
 import createLogger from '@app/utils/createLogger';
 import createNearConnection from '@app/utils/createNearConnection';
 
@@ -61,7 +61,7 @@ describe('when running the cli action', () => {
     // create the token account
     tokenAccount = await createTestAccount({
       creatorAccount,
-      initialBalanceInAtomicUnits: convertNearToYoctoNear(new BN('10')),
+      initialBalanceInAtomicUnits: new BN(convertNEARToYoctoNEAR('10')),
       newAccountID: tokenAccountID,
       newAccountPublicKey: tokenPublicKey,
       nearConnection,
@@ -166,6 +166,18 @@ describe('when running the cli action', () => {
 
     // assert
     expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
+  });
+
+  it('should fail if there is not enough funds in the account', async () => {
+    // arrange
+    // act
+    const response: IActionResponse = await action({
+      ...defaultOptions,
+      accountId: account1AccountID,
+    });
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.InsufficientFundsError);
   });
 
   it('should record failed transfers', async () => {

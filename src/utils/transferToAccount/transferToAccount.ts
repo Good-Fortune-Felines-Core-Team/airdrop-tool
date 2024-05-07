@@ -8,7 +8,7 @@ import {
   GAS_FEE_IN_ATOMIC_UNITS,
   MAX_RETRIES,
   RETRY_DELAY_IN_MILLISECONDS,
-  STORAGE_FEE_IN_STANDARD_UNITS,
+  STORAGE_FEE_IN_ATOMIC_UNITS,
 } from '@app/constants';
 
 // types
@@ -54,9 +54,7 @@ export default async function transferToAccount({
                 registration_only: true,
               },
               gasFee,
-              new BN(
-                utils.format.parseNearAmount(STORAGE_FEE_IN_STANDARD_UNITS)!
-              )
+              new BN(STORAGE_FEE_IN_ATOMIC_UNITS!)
             )
           );
         }
