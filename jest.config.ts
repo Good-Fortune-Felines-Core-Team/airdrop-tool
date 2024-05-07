@@ -14,6 +14,7 @@ const config: Config = {
   rootDir: './',
   setupFiles: ['<rootDir>/test/setup.ts'],
   testEnvironment: 'node',
+  transformIgnorePatterns: ['node_modules/(?!near-sdk-js/lib/utils.js)'],
   transform: {
     '^.+\\.ts?$': [
       'ts-jest',

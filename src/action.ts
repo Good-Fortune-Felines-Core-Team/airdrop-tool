@@ -23,6 +23,7 @@ import type {
 // utils
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
+import validateAccountID from '@app/utils/validateAccountID';
 
 export default async function action({
   accountId,
@@ -34,7 +35,6 @@ export default async function action({
   token,
   transfersFilePath,
 }: IActionOptions): Promise<IActionResponse> {
-  const { validateAccountId } = await import('near-sdk-js/lib/utils.js');
   const completedTransfers: Record<string, string> = {};
   const failedTransfers: Record<string, string> = {};
   let configuration: IConfiguration;
@@ -59,7 +59,7 @@ export default async function action({
       break;
   }
 
-  if (!validateAccountId(accountId)) {
+  if (!validateAccountID(accountId)) {
     logger.error(`account "${accountId}" is not a valid account id`);
 
     return {
@@ -163,7 +163,7 @@ export default async function action({
     let transactionID: string | null;
 
     // check if the account id is valid
-    if (validateAccountId(receiverAccountId)) {
+    if (validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
       failedTransfers[receiverAccountId] = multipler.toString();
