@@ -59,6 +59,7 @@ export default async function action({
       break;
   }
 
+  // check if the sender account id is valid
   if (!validateAccountID(accountId)) {
     logger.error(`account "${accountId}" is not a valid account id`);
 
@@ -149,6 +150,7 @@ export default async function action({
     };
   }
 
+  // get the incremented nonce for the signer's key
   nonce = signerAccessKey.nonce + 1;
 
   logger.info(
@@ -160,10 +162,9 @@ export default async function action({
       Object.entries(transfers)[index];
     const multipler = new BN(receiverMultiplier);
     const transferAmount = multipler.mul(new BN(amount));
-    let transactionID: string | null;
 
-    // check if the account id is valid
-    if (validateAccountID(receiverAccountId)) {
+    // check if the receiver account id is valid
+    if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
       failedTransfers[receiverAccountId] = multipler.toString();
@@ -175,7 +176,7 @@ export default async function action({
       `transferring "${transferAmount.toString()}" to account "${receiverAccountId}"`
     );
 
-    transactionID = await transferToAccount({
+    const { retries, transactionID } = await transferToAccount({
       amount: transferAmount,
       blockHash: signerAccessKey.block_hash,
       contract,
@@ -187,6 +188,9 @@ export default async function action({
       signerPublicKey,
       signerAccount: signer,
     });
+
+    // increment the nonce as it has been used
+    nonce = nonce + retries + 1;
 
     // if we have no transaction id, the transfer has failed
     if (!transactionID) {
@@ -200,7 +204,6 @@ export default async function action({
     }
 
     completedTransfers[receiverAccountId] = multipler.toString();
-    nonce = nonce + 1;
 
     logger.info(
       `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" successful:`,
