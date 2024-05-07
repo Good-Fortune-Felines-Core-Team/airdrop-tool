@@ -12,7 +12,7 @@ import {
 } from '@app/constants';
 
 // types
-import type { IOptions, IResult } from './types';
+import type { IOptions } from './types';
 
 export default async function transferToAccount({
   amount,
@@ -25,8 +25,8 @@ export default async function transferToAccount({
   maxRetries = MAX_RETRIES,
   signerAccount,
   signerPublicKey,
-}: IOptions): Promise<IResult> {
-  return new Promise<IResult>((resolve) => {
+}: IOptions): Promise<string | null> {
+  return new Promise<string | null>((resolve) => {
     const timer = setInterval(async () => {
       const gasFee = new BN(GAS_FEE_IN_ATOMIC_UNITS);
       let actions: Action[] = [];
@@ -99,10 +99,7 @@ export default async function transferToAccount({
         // clear the interval
         clearInterval(timer);
 
-        return resolve({
-          retries,
-          transactionID: transaction_outcome.id,
-        });
+        return resolve(transaction_outcome.id);
       } catch (error) {
         logger.error('failed to send transfer:', error);
 
@@ -114,10 +111,7 @@ export default async function transferToAccount({
           // clear the interval
           clearInterval(timer);
 
-          return resolve({
-            retries,
-            transactionID: null,
-          });
+          return resolve(null);
         }
 
         logger.debug(

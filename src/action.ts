@@ -44,6 +44,7 @@ export default async function action({
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: PublicKey | null;
+  let transactionID: string | null;
   let transfers: Record<string, string>;
 
   switch (network) {
@@ -147,9 +148,6 @@ export default async function action({
     };
   }
 
-  // get the incremented nonce for the signer's key
-  nonce = signerAccessKey.nonce + 1;
-
   logger.info(
     `starting transfers for ${Object.entries(transfers).length} accounts`
   );
@@ -175,8 +173,7 @@ export default async function action({
 
     // get the signer's access key, as it has been used
     signerAccessKey = await accountAccessKey(signer, signerPublicKey);
-
-    const { retries, transactionID } = await transferToAccount({
+    transactionID = await transferToAccount({
       amount: transferAmount,
       blockHash: signerAccessKey.block_hash,
       contract,
