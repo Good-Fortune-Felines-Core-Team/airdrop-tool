@@ -20,5 +20,3 @@ services:
       - ./.near/genesis.json:/usr/app/.near/genesis.json:cached
       - ./.near/node_key.json:/usr/app/.near/node_key.json:cached
       - ./.near/validator_key.json:/usr/app/.near/validator_key.json:cached
-      # node build
-      - ./.near/neard:/usr/app/neard:cached

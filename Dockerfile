@@ -1,10 +1,9 @@
-FROM ubuntu:22.04
-
-RUN apt-get update -qq && apt-get install -y \
-    libssl-dev ca-certificates curl \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:18.20.2
 
 WORKDIR /usr/app
 
+RUN npm i -g near-sandbox@0.0.18 # for protocol version 65
+RUN near-sandbox --home ./.near init --chain-id localnet
+
 # start runnning the node
-CMD ["/bin/sh", "-c", "./neard --home ./.near init --chain-id localnet && ./neard --home ./.near run"]
+CMD ["/bin/sh", "-c", "near-sandbox --home ./.near run"]

@@ -75,9 +75,6 @@ For full documentation, please see [here][documentation].
 ### 3.1. Requirements
 
 * Install [Node v20.9.0+][node]
-* Install [Git Large File Storage][git-large-file-storage]
-
-> ⚠️ **NOTE:** Git Large File Storage (`git lfs`) is needed to download the Near node build file as it is >50Mb and is stored on a remote server.
 
 <sup>[Back to top ^][table-of-contents]</sup>
 

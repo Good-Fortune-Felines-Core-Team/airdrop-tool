@@ -1,5 +1,5 @@
 {
-    "protocol_version": 66,
+    "protocol_version": 65,
     "genesis_time": "2024-04-15T07:43:57.099576572Z",
     "chain_id": "localnet",
     "genesis_height": 0,
