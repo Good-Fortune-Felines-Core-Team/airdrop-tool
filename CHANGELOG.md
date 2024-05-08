@@ -1,3 +1,10 @@
+# [1.1.0-beta.1](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.1-beta.2...v1.1.0-beta.1) (2024-05-08)
+
+
+### Features
+
+* add check for sender account balance ([#6](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/issues/6)) ([e929a51](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/commit/e929a51075287a13b18dbe5fb900effde0c33f86))
+
 ## [1.0.1-beta.2](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.1-beta.1...v1.0.1-beta.2) (2024-05-07)
 
 
