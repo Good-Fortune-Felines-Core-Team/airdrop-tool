@@ -1,4 +1,3 @@
-import BN from 'bn.js';
 import { Account } from 'near-api-js';
 
 // types
@@ -11,7 +10,7 @@ import type { IOptions } from './types';
  */
 export default async function createTestAccount({
   creatorAccount,
-  initialBalanceInAtomicUnits = new BN('0'),
+  initialBalanceInAtomicUnits = '0',
   newAccountID,
   newAccountPublicKey,
   nearConnection,
@@ -32,7 +31,7 @@ export default async function createTestAccount({
   await creatorAccount.createAccount(
     newAccountID,
     newAccountPublicKey,
-    initialBalanceInAtomicUnits
+    BigInt(initialBalanceInAtomicUnits)
   );
 
   return await nearConnection.account(newAccountID);

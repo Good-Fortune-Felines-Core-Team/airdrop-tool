@@ -1,6 +1,5 @@
-import BN from 'bn.js';
 import { transactions, utils } from 'near-api-js';
-import { Action, Transaction } from 'near-api-js/lib/transaction';
+import type { Action, Transaction } from 'near-api-js/lib/transaction';
 import { clearInterval, setInterval } from 'node:timers';
 
 // constants
@@ -27,10 +26,10 @@ export default async function transferToAccount({
   signerPublicKey,
 }: IOptions): Promise<string | null> {
   return new Promise<string | null>((resolve) => {
+    let retries = 0;
     const timer = setInterval(async () => {
-      const gasFee = new BN(GAS_FEE_IN_ATOMIC_UNITS);
+      const gasFee = BigInt(GAS_FEE_IN_ATOMIC_UNITS);
       let actions: Action[] = [];
-      let retries = 0;
       let transaction: Transaction;
 
       try {
@@ -54,7 +53,7 @@ export default async function transferToAccount({
                 registration_only: true,
               },
               gasFee,
-              new BN(STORAGE_FEE_IN_ATOMIC_UNITS!)
+              BigInt(STORAGE_FEE_IN_ATOMIC_UNITS!)
             )
           );
         }
@@ -68,15 +67,14 @@ export default async function transferToAccount({
               amount: amount.toString(),
             },
             gasFee,
-            new BN('1')
+            BigInt('1')
           )
         );
-
         transaction = transactions.createTransaction(
           signerAccount.accountId,
           signerPublicKey,
           contract.contractId,
-          nonce,
+          nonce + retries + 1, // increment the nonce as the access key may have been used
           actions,
           utils.serialize.base_decode(blockHash) as Uint8Array
         );

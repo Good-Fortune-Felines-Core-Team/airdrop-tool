@@ -1,4 +1,4 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { Account, Near, utils } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
@@ -36,7 +36,9 @@ describe('when running the cli action', () => {
   let tokenAccount: Account;
 
   beforeAll(async () => {
-    const totalSupplyInAtomicUnits: BN = new BN('10').pow(new BN('34')); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
+    const totalSupplyInAtomicUnits: BigNumber = new BigNumber('10').pow(
+      new BigNumber('34')
+    ); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
     let tokenPublicKey: utils.PublicKey;
 
     defaultOptions = {
@@ -61,7 +63,7 @@ describe('when running the cli action', () => {
     // create the token account
     tokenAccount = await createTestAccount({
       creatorAccount,
-      initialBalanceInAtomicUnits: new BN(convertNEARToYoctoNEAR('10')),
+      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('10'),
       newAccountID: tokenAccountID,
       newAccountPublicKey: tokenPublicKey,
       nearConnection,
@@ -73,7 +75,7 @@ describe('when running the cli action', () => {
       name: 'Awesome Token',
       symbol: 'AWST',
       tokenAccount,
-      totalSupply: totalSupplyInAtomicUnits.toString(), // 10B in yoctoNEAR
+      totalSupply: totalSupplyInAtomicUnits.toFixed(), // 10B in yoctoNEAR
     });
     // create known accounts
     await createTestAccount({
@@ -199,7 +201,6 @@ describe('when running the cli action', () => {
   it('should record success transfers', async () => {
     // arrange
     // act
-
     const response: IActionResponse = await action(defaultOptions);
 
     // assert
