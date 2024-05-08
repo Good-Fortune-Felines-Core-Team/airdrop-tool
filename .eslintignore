@@ -1,9 +1,0 @@
-.docs/
-.docusaurus/
-.jumpdefi/
-coverage/
-dist/
-docusaurus.config.js
-
-node_modules/
-test/data/

@@ -33,7 +33,6 @@ import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
-import * as console from 'console';
 
 export default async function action({
   accountId,
