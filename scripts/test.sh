@@ -54,7 +54,7 @@ function main {
 
   # if the services are up and running, we can run tests
   if [[ "${near_node_health}" == "healthy" ]]; then
-    npx jest --passWithNoTests
+    npx jest --passWithNoTests --runInBand
 
     exit_code=$?
   else

@@ -1,4 +1,4 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { Account, Near, utils } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
@@ -13,7 +13,6 @@ import { localnet } from '@app/configs';
 import { ExitCodeEnum } from '@app/enums';
 
 // helpers
-import convertNearToYoctoNear from '@test/utils/convertNearToYoctoNear';
 import createTestAccount from '@test/utils/createTestAccount';
 import deployToken from '@test/utils/deployToken';
 
@@ -21,6 +20,7 @@ import deployToken from '@test/utils/deployToken';
 import type { IActionResponse, IActionOptions, TNetworkIDs } from '@app/types';
 
 // utils
+import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
 import createLogger from '@app/utils/createLogger';
 import createNearConnection from '@app/utils/createNearConnection';
 
@@ -36,7 +36,9 @@ describe('when running the cli action', () => {
   let tokenAccount: Account;
 
   beforeAll(async () => {
-    const totalSupplyInAtomicUnits: BN = new BN('10').pow(new BN('34')); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
+    const totalSupplyInAtomicUnits: BigNumber = new BigNumber('10').pow(
+      new BigNumber('34')
+    ); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
     let tokenPublicKey: utils.PublicKey;
 
     defaultOptions = {
@@ -61,7 +63,7 @@ describe('when running the cli action', () => {
     // create the token account
     tokenAccount = await createTestAccount({
       creatorAccount,
-      initialBalanceInAtomicUnits: convertNearToYoctoNear(new BN('10')),
+      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('10'),
       newAccountID: tokenAccountID,
       newAccountPublicKey: tokenPublicKey,
       nearConnection,
@@ -73,7 +75,7 @@ describe('when running the cli action', () => {
       name: 'Awesome Token',
       symbol: 'AWST',
       tokenAccount,
-      totalSupply: totalSupplyInAtomicUnits.toString(), // 10B in yoctoNEAR
+      totalSupply: totalSupplyInAtomicUnits.toFixed(), // 10B in yoctoNEAR
     });
     // create known accounts
     await createTestAccount({
@@ -168,6 +170,18 @@ describe('when running the cli action', () => {
     expect(response.exitCode).toBe(ExitCodeEnum.FileReadError);
   });
 
+  it('should fail if there is not enough funds in the account', async () => {
+    // arrange
+    // act
+    const response: IActionResponse = await action({
+      ...defaultOptions,
+      accountId: account1AccountID,
+    });
+
+    // assert
+    expect(response.exitCode).toBe(ExitCodeEnum.InsufficientFundsError);
+  });
+
   it('should record failed transfers', async () => {
     // arrange
     // act
@@ -187,7 +201,6 @@ describe('when running the cli action', () => {
   it('should record success transfers', async () => {
     // arrange
     // act
-
     const response: IActionResponse = await action(defaultOptions);
 
     // assert

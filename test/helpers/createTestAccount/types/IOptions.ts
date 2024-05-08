@@ -1,9 +1,8 @@
-import BN from 'bn.js';
 import { Account, Near, utils } from 'near-api-js';
 
 interface IOptions {
   creatorAccount: Account;
-  initialBalanceInAtomicUnits?: BN;
+  initialBalanceInAtomicUnits?: string;
   nearConnection: Near;
   newAccountID: string;
   newAccountPublicKey: utils.PublicKey;

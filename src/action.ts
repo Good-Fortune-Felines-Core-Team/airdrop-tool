@@ -1,12 +1,19 @@
-import BN from 'bn.js';
+import BigNumber from 'bignumber.js';
 import { Account, Contract, Near } from 'near-api-js';
-import { PublicKey } from 'near-api-js/lib/utils';
+import type { AccountBalance } from 'near-api-js/lib/account';
+import type { PublicKey } from 'near-api-js/lib/utils';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 
 // configs
 import { localnet, mainnet, testnet } from '@app/configs';
+
+// constants
+import {
+  GAS_FEE_IN_ATOMIC_UNITS,
+  STORAGE_FEE_IN_ATOMIC_UNITS,
+} from '@app/constants';
 
 // enums
 import { ExitCodeEnum } from '@app/enums';
@@ -22,6 +29,7 @@ import type {
 
 // utils
 import accountAccessKey from '@app/utils/accountAccessKey';
+import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
@@ -38,12 +46,14 @@ export default async function action({
 }: IActionOptions): Promise<IActionResponse> {
   const completedTransfers: Record<string, string> = {};
   const failedTransfers: Record<string, string> = {};
+  let accountBalance: AccountBalance;
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: PublicKey | null;
+  let totalFeesInAtomicUnits: BigNumber;
   let transactionID: string | null;
   let transfers: Record<string, string>;
 
@@ -127,7 +137,8 @@ export default async function action({
   }
 
   signerAccessKey = await accountAccessKey(signer, signerPublicKey);
-  contract = new Contract(signer, token, {
+  contract = new Contract(signer.connection, token, {
+    useLocalViewExecution: false,
     viewMethods: ['ft_balance_of', 'storage_balance_of'],
     changeMethods: ['ft_transfer', 'storage_deposit'],
   }) as ITokenContract;
@@ -148,6 +159,24 @@ export default async function action({
     };
   }
 
+  accountBalance = await signer.getAccountBalance();
+  totalFeesInAtomicUnits = new BigNumber(GAS_FEE_IN_ATOMIC_UNITS)
+    .plus(new BigNumber(STORAGE_FEE_IN_ATOMIC_UNITS))
+    .multipliedBy(new BigNumber(Object.entries(transfers).length));
+
+  // if the signer does not have funds tio cover the fees, error
+  if (totalFeesInAtomicUnits.gt(new BigNumber(accountBalance.available))) {
+    logger.error(
+      `there are insufficient funds in account "${signer.accountId}" to cover the fees, you need at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toString())}", you have "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
+    );
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InsufficientFundsError,
+      failedTransfers,
+    };
+  }
+
   logger.info(
     `starting transfers for ${Object.entries(transfers).length} accounts`
   );
@@ -155,8 +184,8 @@ export default async function action({
   for (let index = 0; index < Object.entries(transfers).length; index++) {
     const [receiverAccountId, receiverMultiplier] =
       Object.entries(transfers)[index];
-    const multipler = new BN(receiverMultiplier);
-    const transferAmount = multipler.mul(new BN(amount));
+    const multipler = new BigNumber(receiverMultiplier);
+    const transferAmount = multipler.multipliedBy(new BigNumber(amount));
 
     // check if the receiver account id is valid
     if (!validateAccountID(receiverAccountId)) {
@@ -168,7 +197,7 @@ export default async function action({
     }
 
     logger.info(
-      `transferring "${transferAmount.toString()}" to account "${receiverAccountId}"`
+      `transferring "${transferAmount.toFixed()}" to account "${receiverAccountId}"`
     );
 
     // get the signer's access key, as it has been used
@@ -180,7 +209,7 @@ export default async function action({
       logger,
       maxRetries,
       nearConnection,
-      nonce: signerAccessKey.nonce + 1, // increment the nonce as it has been used
+      nonce: signerAccessKey.nonce,
       receiverAccountId,
       signerPublicKey,
       signerAccount: signer,
@@ -189,18 +218,18 @@ export default async function action({
     // if we have no transaction id, the transfer has failed
     if (!transactionID) {
       logger.debug(
-        `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" failed`
+        `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" failed`
       );
 
-      failedTransfers[receiverAccountId] = multipler.toString();
+      failedTransfers[receiverAccountId] = multipler.toFixed();
 
       continue;
     }
 
-    completedTransfers[receiverAccountId] = multipler.toString();
+    completedTransfers[receiverAccountId] = multipler.toFixed();
 
     logger.info(
-      `transfer of "${transferAmount.toString()}" to account "${receiverAccountId}" successful:`,
+      `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" successful:`,
       transactionID
     );
   }

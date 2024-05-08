@@ -7,6 +7,7 @@ enum ExitCodeEnum {
   DirectoryWriteError,
   FileReadError,
   FileWriteError,
+  InsufficientFundsError,
 }
 
 export default ExitCodeEnum;
