@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { Account, Contract, Near } from 'near-api-js';
+import { Account, Contract, Near, utils } from 'near-api-js';
 import type { AccountBalance } from 'near-api-js/lib/account';
-import type { PublicKey } from 'near-api-js/lib/utils';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
@@ -52,7 +51,7 @@ export default async function action({
   let nearConnection: Near;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
-  let signerPublicKey: PublicKey | null;
+  let signerPublicKey: utils.PublicKey | null;
   let totalFeesInAtomicUnits: BigNumber;
   let transactionID: string | null;
   let transfers: Record<string, string>;

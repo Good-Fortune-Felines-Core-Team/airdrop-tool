@@ -1,5 +1,4 @@
-import { transactions, utils } from 'near-api-js';
-import type { Action, Transaction } from 'near-api-js/lib/transaction';
+import { providers, transactions, utils } from 'near-api-js';
 import { clearInterval, setInterval } from 'node:timers';
 
 // constants
@@ -29,8 +28,8 @@ export default async function transferToAccount({
     let retries = 0;
     const timer = setInterval(async () => {
       const gasFee = BigInt(GAS_FEE_IN_ATOMIC_UNITS);
-      let actions: Action[] = [];
-      let transaction: Transaction;
+      let actions: transactions.Action[] = [];
+      let transaction: transactions.Transaction;
 
       try {
         logger.debug(`checking storage balance for "${receiverAccountId}"`);
@@ -87,10 +86,26 @@ export default async function transferToAccount({
         );
         /* eslint-enable @typescript-eslint/no-unused-vars */
 
-        const { transaction_outcome } =
+        const { status, transaction_outcome } =
           await signerAccount.connection.provider.sendTransaction(
             signedTransaction
           );
+        const failure =
+          (status as providers.FinalExecutionStatus)?.Failure || null;
+
+        if (failure) {
+          // for errors that are unrecoverable, do not retry
+          if (
+            failure.error_type === 'RuntimeError' ||
+            failure.error_type === 'TxExecutionError'
+          ) {
+            logger.error(`${failure.error_type}: ${failure.error_message}`);
+
+            return resolve(null);
+          }
+
+          throw new Error(`${failure.error_type}: ${failure.error_message}`);
+        }
 
         // clear the interval
         clearInterval(timer);

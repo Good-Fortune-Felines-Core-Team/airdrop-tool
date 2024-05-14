@@ -9,13 +9,13 @@ import type { IOptions } from './types';
  * @returns {Promise<Account>} a promise that resolves to the new account.
  */
 export default async function createTestAccount({
+  connection,
   creatorAccount,
   initialBalanceInAtomicUnits = '0',
   newAccountID,
   newAccountPublicKey,
-  nearConnection,
 }: IOptions): Promise<Account> {
-  let newAccount = await nearConnection.account(newAccountID);
+  let newAccount = await connection.account(newAccountID);
 
   try {
     // this will error if the account doesn't exist
@@ -34,5 +34,5 @@ export default async function createTestAccount({
     BigInt(initialBalanceInAtomicUnits)
   );
 
-  return await nearConnection.account(newAccountID);
+  return await connection.account(newAccountID);
 }
