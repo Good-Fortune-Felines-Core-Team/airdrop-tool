@@ -21,9 +21,9 @@ import type { IActionResponse, IActionOptions } from '@app/types';
 import createLogger from '@app/utils/createLogger';
 
 describe('when running the cli action', () => {
-  const creatorAccountID: string = 'test.near';
+  const creatorAccountID = 'test.near';
   const credentials = resolve(cwd(), 'test', 'credentials');
-  const tokenAccountID: string = 'token.test.near';
+  const tokenAccountID = 'token.test.near';
   let creatorAccount: Account;
   let defaultOptions: IActionOptions = {
     amount: '1',
