@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-import { Account, Near, utils } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
 
@@ -13,89 +11,39 @@ import { localnet } from '@app/configs';
 import { ExitCodeEnum } from '@app/enums';
 
 // helpers
-import createTestAccount from '@test/utils/createTestAccount';
-import deployToken from '@test/utils/deployToken';
+import createTestAccount from '@test/helpers/createTestAccount';
 
 // types
-import type { IActionResponse, IActionOptions, TNetworkIDs } from '@app/types';
+import type { IActionResponse, IActionOptions } from '@app/types';
 
 // utils
-import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
 import createLogger from '@app/utils/createLogger';
-import createNearConnection from '@app/utils/createNearConnection';
+import { Account, connect, keyStores, Near } from 'near-api-js';
 
 describe('when running the cli action', () => {
-  const account1AccountID: string = 'account1.test.near';
-  const account2AccountID: string = 'account2.test.near';
   const creatorAccountID: string = 'test.near';
-  const networkID: TNetworkIDs = 'localnet';
+  const credentials = resolve(cwd(), 'test', 'credentials');
   const tokenAccountID: string = 'token.test.near';
-  let defaultOptions: IActionOptions;
   let creatorAccount: Account;
-  let nearConnection: Near;
-  let tokenAccount: Account;
+  let defaultOptions: IActionOptions = {
+    amount: '1',
+    accountId: creatorAccountID,
+    credentials,
+    logger: createLogger('error'),
+    maxRetries: 0,
+    network: localnet.networkId,
+    token: tokenAccountID,
+    transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
+  };
+  let near: Near;
 
   beforeAll(async () => {
-    const totalSupplyInAtomicUnits: BigNumber = new BigNumber('10').pow(
-      new BigNumber('34')
-    ); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
-    let tokenPublicKey: utils.PublicKey;
-
-    defaultOptions = {
-      amount: '1',
-      accountId: creatorAccountID,
-      credentials: resolve(cwd(), 'test', 'credentials'),
-      logger: createLogger('error'),
-      maxRetries: 0,
-      network: networkID,
-      token: tokenAccountID,
-      transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
-    };
-    nearConnection = await createNearConnection({
-      ...localnet,
-      credentialsDir: defaultOptions.credentials,
+    near = await connect({
+      networkId: localnet.networkId,
+      nodeUrl: localnet.nodeUrl,
+      keyStore: new keyStores.UnencryptedFileSystemKeyStore(credentials),
     });
-    creatorAccount = await nearConnection.account(defaultOptions.accountId);
-    tokenPublicKey = await nearConnection.connection.signer.getPublicKey(
-      tokenAccountID,
-      networkID
-    );
-    // create the token account
-    tokenAccount = await createTestAccount({
-      creatorAccount,
-      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('10'),
-      newAccountID: tokenAccountID,
-      newAccountPublicKey: tokenPublicKey,
-      nearConnection,
-    });
-
-    // deploy contract
-    await deployToken({
-      creatorAccount,
-      name: 'Awesome Token',
-      symbol: 'AWST',
-      tokenAccount,
-      totalSupply: totalSupplyInAtomicUnits.toFixed(), // 10B in yoctoNEAR
-    });
-    // create known accounts
-    await createTestAccount({
-      creatorAccount,
-      newAccountID: account1AccountID,
-      newAccountPublicKey: await nearConnection.connection.signer.getPublicKey(
-        account1AccountID,
-        networkID
-      ),
-      nearConnection,
-    });
-    await createTestAccount({
-      creatorAccount,
-      newAccountID: account2AccountID,
-      newAccountPublicKey: await nearConnection.connection.signer.getPublicKey(
-        account2AccountID,
-        networkID
-      ),
-      nearConnection,
-    });
+    creatorAccount = await near.account(creatorAccountID);
   });
 
   it('should fail if the supplied account id is invalid', async () => {
@@ -172,10 +120,20 @@ describe('when running the cli action', () => {
 
   it('should fail if there is not enough funds in the account', async () => {
     // arrange
+    const accountId = 'account1.test.near';
+    const account = await createTestAccount({
+      connection: near,
+      creatorAccount,
+      newAccountID: accountId,
+      newAccountPublicKey: await near.connection.signer.getPublicKey(
+        accountId,
+        localnet.networkId
+      ),
+    });
     // act
     const response: IActionResponse = await action({
       ...defaultOptions,
-      accountId: account1AccountID,
+      accountId: account.accountId,
     });
 
     // assert
