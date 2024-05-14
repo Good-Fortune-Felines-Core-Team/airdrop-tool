@@ -1,3 +1,10 @@
+# [1.1.0-beta.2](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.1.0-beta.1...v1.1.0-beta.2) (2024-05-14)
+
+
+### Features
+
+* fail on critical errors ([#7](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/issues/7)) ([bf7275f](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/commit/bf7275ff670071e364b609a417c1c4caa6f96067))
+
 # [1.1.0-beta.1](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.1-beta.2...v1.1.0-beta.1) (2024-05-08)
 
 
