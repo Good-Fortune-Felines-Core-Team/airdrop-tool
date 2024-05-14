@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk_jumpdefi_airdrop_tool=self.webpackChunk_jumpdefi_airdrop_tool||[]).push([[725],{1966:e=>{e.exports=JSON.parse('{"name":"docusaurus-plugin-content-docs","id":"default"}')}}]);
