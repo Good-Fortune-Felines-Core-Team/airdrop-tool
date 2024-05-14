@@ -1,5 +1,4 @@
 import { providers, transactions, utils } from 'near-api-js';
-import type { Action, Transaction } from 'near-api-js/lib/transaction';
 import { clearInterval, setInterval } from 'node:timers';
 
 // constants
@@ -29,8 +28,8 @@ export default async function transferToAccount({
     let retries = 0;
     const timer = setInterval(async () => {
       const gasFee = BigInt(GAS_FEE_IN_ATOMIC_UNITS);
-      let actions: Action[] = [];
-      let transaction: Transaction;
+      let actions: transactions.Action[] = [];
+      let transaction: transactions.Transaction;
 
       try {
         logger.debug(`checking storage balance for "${receiverAccountId}"`);
