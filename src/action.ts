@@ -30,7 +30,9 @@ import type {
 import accountAccessKey from '@app/utils/accountAccessKey';
 import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
-import transferToAccount from '@app/utils/transferToAccount';
+import transferToAccount, {
+  type IResult as ITransferAccountResult,
+} from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
 
 export default async function action({
@@ -49,13 +51,14 @@ export default async function action({
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
+  let nonce: number;
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: utils.PublicKey | null;
   let accountTokenBalance: BigNumber;
   let totalFeesInAtomicUnits: BigNumber;
   let totalTokensInAtomicUnits: BigNumber;
-  let transactionID: string | null;
+  let transferAccountResult: ITransferAccountResult;
   let transfers: Record<string, string>;
 
   switch (network) {
@@ -204,6 +207,12 @@ export default async function action({
     `starting transfers for ${Object.entries(transfers).length} accounts`
   );
 
+  // get the signer's access key
+  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
+
+  // increase the nonce +1 of the signer's access key nonce
+  nonce = signerAccessKey.nonce + 1;
+
   for (let index = 0; index < Object.entries(transfers).length; index++) {
     const [receiverAccountId, receiverMultiplier] =
       Object.entries(transfers)[index];
@@ -223,23 +232,22 @@ export default async function action({
       `transferring "${transferAmount.toFixed()}" to account "${receiverAccountId}"`
     );
 
-    // get the signer's access key, as it has been used
-    signerAccessKey = await accountAccessKey(signer, signerPublicKey);
-    transactionID = await transferToAccount({
+    transferAccountResult = await transferToAccount({
       amount: transferAmount.toFixed(),
       blockHash: signerAccessKey.block_hash,
       contract,
       logger,
       maxRetries,
       nearConnection,
-      nonce: signerAccessKey.nonce,
+      nonce,
       receiverAccountId,
       signerPublicKey,
       signerAccount: signer,
     });
+    nonce = transferAccountResult.nonce; // update the nonce with the once from the transfer, this will include the retried transactions
 
     // if we have no transaction id, the transfer has failed
-    if (!transactionID) {
+    if (!transferAccountResult.transactionID) {
       logger.debug(
         `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" failed`
       );
@@ -253,7 +261,7 @@ export default async function action({
 
     logger.info(
       `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" successful:`,
-      transactionID
+      transferAccountResult.transactionID
     );
   }
 
