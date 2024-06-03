@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Account, Near } from 'near-api-js';
 import { PublicKey } from 'near-api-js/lib/utils';
 
@@ -6,7 +5,7 @@ import { PublicKey } from 'near-api-js/lib/utils';
 import type { IBaseOptions, ITokenContract } from '@app/types';
 
 interface IOptions extends IBaseOptions {
-  amount: BigNumber;
+  amount: string;
   blockHash: string;
   contract: ITokenContract;
   maxRetries?: number;

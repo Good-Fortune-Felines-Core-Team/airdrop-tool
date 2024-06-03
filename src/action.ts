@@ -1,3 +1,4 @@
+import type { AccessKeyView, NodeStatusResult } from '@near-js/types';
 import BigNumber from 'bignumber.js';
 import { Account, Contract, Near, utils } from 'near-api-js';
 import type { AccountBalance } from 'near-api-js/lib/account';
@@ -19,7 +20,6 @@ import { ExitCodeEnum } from '@app/enums';
 
 // types
 import type {
-  IAccessKeyResponse,
   IActionOptions,
   IActionResponse,
   IConfiguration,
@@ -27,11 +27,14 @@ import type {
 } from '@app/types';
 
 // utils
-import accountAccessKey from '@app/utils/accountAccessKey';
+import accountAccessKeyView from '@app/utils/accountAccessKeyView';
 import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
-import transferToAccount from '@app/utils/transferToAccount';
+import transferToAccount, {
+  type IResult as ITransferAccountResult,
+} from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
+import console from 'console';
 
 export default async function action({
   accountId,
@@ -49,11 +52,15 @@ export default async function action({
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
+  let nodeStatus: NodeStatusResult;
+  let nonce: number;
   let signer: Account;
-  let signerAccessKey: IAccessKeyResponse;
+  let signerAccessKeyView: AccessKeyView | null;
   let signerPublicKey: utils.PublicKey | null;
+  let accountTokenBalance: BigNumber;
   let totalFeesInAtomicUnits: BigNumber;
-  let transactionID: string | null;
+  let totalTokensInAtomicUnits: BigNumber;
+  let transferAccountResult: ITransferAccountResult;
   let transfers: Record<string, string>;
 
   switch (network) {
@@ -118,6 +125,7 @@ export default async function action({
     ...configuration,
     credentialsDir: credentials,
   });
+  nodeStatus = await nearConnection.connection.provider.status();
   signer = await nearConnection.account(accountId);
   signerPublicKey = await signer.connection.signer.getPublicKey(
     accountId,
@@ -135,7 +143,6 @@ export default async function action({
     };
   }
 
-  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
   contract = new Contract(signer.connection, token, {
     useLocalViewExecution: false,
     viewMethods: ['ft_balance_of', 'storage_balance_of'],
@@ -163,10 +170,10 @@ export default async function action({
     .plus(new BigNumber(STORAGE_FEE_IN_ATOMIC_UNITS))
     .multipliedBy(new BigNumber(Object.entries(transfers).length));
 
-  // if the signer does not have funds tio cover the fees, error
+  // if the signer does not have funds to cover the fees, error
   if (totalFeesInAtomicUnits.gt(new BigNumber(accountBalance.available))) {
     logger.error(
-      `there are insufficient funds in account "${signer.accountId}" to cover the fees, you need at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toString())}", you have "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
+      `there are insufficient funds in the account "${signer.accountId}" to cover the fees, the account needs at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())}", the account only has "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
     );
 
     return {
@@ -176,9 +183,51 @@ export default async function action({
     };
   }
 
+  accountTokenBalance = new BigNumber(
+    await contract.ft_balance_of({ account_id: accountId })
+  );
+  totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+    (acc, currentValue) =>
+      acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(amount))),
+    new BigNumber('0')
+  );
+
+  // if the signer does not have enough tokens, error
+  if (totalTokensInAtomicUnits.gt(accountTokenBalance)) {
+    logger.error(
+      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toFixed())}" required, the account only has "${convertYoctoNEARToNEAR(accountTokenBalance.toFixed())}" available`
+    );
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InsufficientTokensError,
+      failedTransfers,
+    };
+  }
+
   logger.info(
     `starting transfers for ${Object.entries(transfers).length} accounts`
   );
+
+  // get the signer's access key
+  signerAccessKeyView = await accountAccessKeyView(signer, signerPublicKey);
+
+  if (!signerAccessKeyView) {
+    logger.error(
+      `access key for "${accountId}" doesn't exist in "${credentials}"`
+    );
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.AccountNotKnown,
+      failedTransfers,
+    };
+  }
+
+  // increase the nonce +1 of the signer's access key nonce
+  nonce = new BigNumber(String(signerAccessKeyView.nonce)).plus(1).toNumber();
+
+  console.log(`fetched nonce ${String(signerAccessKeyView.nonce)}`);
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
     const [receiverAccountId, receiverMultiplier] =
@@ -190,7 +239,7 @@ export default async function action({
     if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
-      failedTransfers[receiverAccountId] = multipler.toString();
+      failedTransfers[receiverAccountId] = multipler.toFixed();
 
       continue;
     }
@@ -199,23 +248,24 @@ export default async function action({
       `transferring "${transferAmount.toFixed()}" to account "${receiverAccountId}"`
     );
 
-    // get the signer's access key, as it has been used
-    signerAccessKey = await accountAccessKey(signer, signerPublicKey);
-    transactionID = await transferToAccount({
-      amount: transferAmount,
-      blockHash: signerAccessKey.block_hash,
+    console.log(`using initial nonce for "${receiverAccountId}" ${nonce}`);
+    transferAccountResult = await transferToAccount({
+      amount: transferAmount.toFixed(),
+      blockHash: nodeStatus.sync_info.latest_block_hash,
       contract,
       logger,
       maxRetries,
       nearConnection,
-      nonce: signerAccessKey.nonce,
+      nonce,
       receiverAccountId,
       signerPublicKey,
       signerAccount: signer,
     });
+    nonce = transferAccountResult.nonce; // update the nonce with the once from the transfer, this will include the retried transactions
+    console.log(`returned nonce for "${receiverAccountId}" ${nonce}`);
 
     // if we have no transaction id, the transfer has failed
-    if (!transactionID) {
+    if (!transferAccountResult.transactionID) {
       logger.debug(
         `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" failed`
       );
@@ -229,9 +279,11 @@ export default async function action({
 
     logger.info(
       `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" successful:`,
-      transactionID
+      transferAccountResult.transactionID
     );
   }
+
+  console.log(`final nonce ${nonce}`);
 
   logger.info(
     `${Object.entries(completedTransfers).length} transfers successful`

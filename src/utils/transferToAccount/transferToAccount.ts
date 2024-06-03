@@ -10,8 +10,18 @@ import {
 } from '@app/constants';
 
 // types
-import type { IOptions } from './types';
+import type { IOptions, IResult } from './types';
+import console from 'console';
 
+/**
+ * Convenience function that transfers the tokens to the account. This function will retry if the account transaction
+ * fails and the failure is not a recoverable error, i.e. errors that are runtime errors or contract execution errors.
+ * @param {IOptions} options - the sender & receiver accounts, the maximum retries for failed transactions, the amount,
+ * and the nonce (the nonce MUST be greater than the sender's access key nonce).
+ * @returns {Promise<IResult>} a promise that resolves to the transaction ID (if the transfer was ultimately
+ * unsuccessful, including retries, this will be null) and the incremented nonce, including the success transaction and
+ * all the retries.
+ */
 export default async function transferToAccount({
   amount,
   blockHash,
@@ -23,9 +33,11 @@ export default async function transferToAccount({
   maxRetries = MAX_RETRIES,
   signerAccount,
   signerPublicKey,
-}: IOptions): Promise<string | null> {
-  return new Promise<string | null>((resolve) => {
-    let retries = 0;
+}: IOptions): Promise<IResult> {
+  let _nonce = nonce;
+  let retries = 0;
+
+  return new Promise<IResult>((resolve) => {
     const timer = setInterval(async () => {
       const gasFee = BigInt(GAS_FEE_IN_ATOMIC_UNITS);
       let actions: transactions.Action[] = [];
@@ -63,19 +75,21 @@ export default async function transferToAccount({
             'ft_transfer',
             {
               receiver_id: receiverAccountId,
-              amount: amount.toString(),
+              amount,
             },
             gasFee,
             BigInt('1')
           )
         );
+        _nonce = _nonce + retries + 1; // increment the nonce as the access key may have been used
+        console.log('increased nonce to:', _nonce);
         transaction = transactions.createTransaction(
           signerAccount.accountId,
           signerPublicKey,
           contract.contractId,
-          nonce + retries + 1, // increment the nonce as the access key may have been used
+          _nonce,
           actions,
-          utils.serialize.base_decode(blockHash) as Uint8Array
+          utils.serialize.base_decode(blockHash)
         );
         /* eslint-disable @typescript-eslint/no-unused-vars */
         const [_, signedTransaction] = await transactions.signTransaction(
@@ -101,7 +115,10 @@ export default async function transferToAccount({
           ) {
             logger.error(`${failure.error_type}: ${failure.error_message}`);
 
-            return resolve(null);
+            return resolve({
+              nonce: _nonce,
+              transactionID: null,
+            });
           }
 
           throw new Error(`${failure.error_type}: ${failure.error_message}`);
@@ -110,7 +127,10 @@ export default async function transferToAccount({
         // clear the interval
         clearInterval(timer);
 
-        return resolve(transaction_outcome.id);
+        return resolve({
+          nonce: _nonce,
+          transactionID: transaction_outcome.id,
+        });
       } catch (error) {
         logger.error('failed to send transfer:', error);
 
@@ -122,7 +142,10 @@ export default async function transferToAccount({
           // clear the interval
           clearInterval(timer);
 
-          return resolve(null);
+          return resolve({
+            nonce: _nonce,
+            transactionID: null,
+          });
         }
 
         logger.debug(
