@@ -24,8 +24,9 @@ export default async function transferToAccount({
   signerAccount,
   signerPublicKey,
 }: IOptions): Promise<string | null> {
+  let retries = 0;
+
   return new Promise<string | null>((resolve) => {
-    let retries = 0;
     const timer = setInterval(async () => {
       const gasFee = BigInt(GAS_FEE_IN_ATOMIC_UNITS);
       let actions: transactions.Action[] = [];
@@ -63,7 +64,7 @@ export default async function transferToAccount({
             'ft_transfer',
             {
               receiver_id: receiverAccountId,
-              amount: amount.toString(),
+              amount,
             },
             gasFee,
             BigInt('1')

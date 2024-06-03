@@ -168,7 +168,7 @@ export default async function action({
   // if the signer does not have funds to cover the fees, error
   if (totalFeesInAtomicUnits.gt(new BigNumber(accountBalance.available))) {
     logger.error(
-      `there are insufficient funds in the account "${signer.accountId}" to cover the fees, the account needs at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toString())}", the account only has "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
+      `there are insufficient funds in the account "${signer.accountId}" to cover the fees, the account needs at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())}", the account only has "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
     );
 
     return {
@@ -190,7 +190,7 @@ export default async function action({
   // if the signer does not have enough tokens, error
   if (totalTokensInAtomicUnits.gt(accountTokenBalance)) {
     logger.error(
-      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toString())}" required, the account only has "${convertYoctoNEARToNEAR(accountTokenBalance.toString())}" available`
+      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toFixed())}" required, the account only has "${convertYoctoNEARToNEAR(accountTokenBalance.toFixed())}" available`
     );
 
     return {
@@ -214,7 +214,7 @@ export default async function action({
     if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
-      failedTransfers[receiverAccountId] = multipler.toString();
+      failedTransfers[receiverAccountId] = multipler.toFixed();
 
       continue;
     }
@@ -226,7 +226,7 @@ export default async function action({
     // get the signer's access key, as it has been used
     signerAccessKey = await accountAccessKey(signer, signerPublicKey);
     transactionID = await transferToAccount({
-      amount: transferAmount,
+      amount: transferAmount.toFixed(),
       blockHash: signerAccessKey.block_hash,
       contract,
       logger,
