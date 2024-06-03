@@ -1,3 +1,10 @@
+# [1.2.0-beta.1](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.1.0...v1.2.0-beta.1) (2024-06-03)
+
+
+### Features
+
+* check for token balance ([#8](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/issues/8)) ([90a39fb](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/commit/90a39fbf7e5a05a41c11668b9660123a398a6269))
+
 # [1.1.0](https://github.com/Good-Fortune-Felines-Core-Team/airdrop-tool/compare/v1.0.0...v1.1.0) (2024-05-14)
 
 
