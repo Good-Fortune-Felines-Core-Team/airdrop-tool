@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { Account, Near } from 'near-api-js';
 import { PublicKey } from 'near-api-js/lib/utils';
 

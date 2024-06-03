@@ -1,3 +1,4 @@
+import type { AccessKeyView, NodeStatusResult } from '@near-js/types';
 import BigNumber from 'bignumber.js';
 import { Account, Contract, Near, utils } from 'near-api-js';
 import type { AccountBalance } from 'near-api-js/lib/account';
@@ -19,7 +20,6 @@ import { ExitCodeEnum } from '@app/enums';
 
 // types
 import type {
-  IAccessKeyResponse,
   IActionOptions,
   IActionResponse,
   IConfiguration,
@@ -27,13 +27,14 @@ import type {
 } from '@app/types';
 
 // utils
-import accountAccessKey from '@app/utils/accountAccessKey';
+import accountAccessKeyView from '@app/utils/accountAccessKeyView';
 import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
 import transferToAccount, {
   type IResult as ITransferAccountResult,
 } from '@app/utils/transferToAccount';
 import validateAccountID from '@app/utils/validateAccountID';
+import console from 'console';
 
 export default async function action({
   accountId,
@@ -51,9 +52,10 @@ export default async function action({
   let configuration: IConfiguration;
   let contract: ITokenContract;
   let nearConnection: Near;
+  let nodeStatus: NodeStatusResult;
   let nonce: number;
   let signer: Account;
-  let signerAccessKey: IAccessKeyResponse;
+  let signerAccessKeyView: AccessKeyView | null;
   let signerPublicKey: utils.PublicKey | null;
   let accountTokenBalance: BigNumber;
   let totalFeesInAtomicUnits: BigNumber;
@@ -123,6 +125,7 @@ export default async function action({
     ...configuration,
     credentialsDir: credentials,
   });
+  nodeStatus = await nearConnection.connection.provider.status();
   signer = await nearConnection.account(accountId);
   signerPublicKey = await signer.connection.signer.getPublicKey(
     accountId,
@@ -140,7 +143,6 @@ export default async function action({
     };
   }
 
-  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
   contract = new Contract(signer.connection, token, {
     useLocalViewExecution: false,
     viewMethods: ['ft_balance_of', 'storage_balance_of'],
@@ -208,10 +210,24 @@ export default async function action({
   );
 
   // get the signer's access key
-  signerAccessKey = await accountAccessKey(signer, signerPublicKey);
+  signerAccessKeyView = await accountAccessKeyView(signer, signerPublicKey);
+
+  if (!signerAccessKeyView) {
+    logger.error(
+      `access key for "${accountId}" doesn't exist in "${credentials}"`
+    );
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.AccountNotKnown,
+      failedTransfers,
+    };
+  }
 
   // increase the nonce +1 of the signer's access key nonce
-  nonce = signerAccessKey.nonce + 1;
+  nonce = new BigNumber(String(signerAccessKeyView.nonce)).plus(1).toNumber();
+
+  console.log(`fetched nonce ${String(signerAccessKeyView.nonce)}`);
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
     const [receiverAccountId, receiverMultiplier] =
@@ -232,9 +248,10 @@ export default async function action({
       `transferring "${transferAmount.toFixed()}" to account "${receiverAccountId}"`
     );
 
+    console.log(`using initial nonce for "${receiverAccountId}" ${nonce}`);
     transferAccountResult = await transferToAccount({
       amount: transferAmount.toFixed(),
-      blockHash: signerAccessKey.block_hash,
+      blockHash: nodeStatus.sync_info.latest_block_hash,
       contract,
       logger,
       maxRetries,
@@ -245,6 +262,7 @@ export default async function action({
       signerAccount: signer,
     });
     nonce = transferAccountResult.nonce; // update the nonce with the once from the transfer, this will include the retried transactions
+    console.log(`returned nonce for "${receiverAccountId}" ${nonce}`);
 
     // if we have no transaction id, the transfer has failed
     if (!transferAccountResult.transactionID) {
@@ -264,6 +282,8 @@ export default async function action({
       transferAccountResult.transactionID
     );
   }
+
+  console.log(`final nonce ${nonce}`);
 
   logger.info(
     `${Object.entries(completedTransfers).length} transfers successful`

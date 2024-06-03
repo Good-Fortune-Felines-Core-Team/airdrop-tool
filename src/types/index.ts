@@ -1,4 +1,3 @@
-export type { default as IAccessKeyResponse } from './IAccessKeyResponse';
 export type { default as IActionOptions } from './IActionOptions';
 export type { default as IActionResponse } from './IActionResponse';
 export type { default as IBaseOptions } from './IBaseOptions';

@@ -11,6 +11,7 @@ import {
 
 // types
 import type { IOptions, IResult } from './types';
+import console from 'console';
 
 /**
  * Convenience function that transfers the tokens to the account. This function will retry if the account transaction
@@ -81,13 +82,14 @@ export default async function transferToAccount({
           )
         );
         _nonce = _nonce + retries + 1; // increment the nonce as the access key may have been used
+        console.log('increased nonce to:', _nonce);
         transaction = transactions.createTransaction(
           signerAccount.accountId,
           signerPublicKey,
           contract.contractId,
           _nonce,
           actions,
-          utils.serialize.base_decode(blockHash) as Uint8Array
+          utils.serialize.base_decode(blockHash)
         );
         /* eslint-disable @typescript-eslint/no-unused-vars */
         const [_, signedTransaction] = await transactions.signTransaction(

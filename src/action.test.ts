@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { type Account, connect, keyStores, Near } from 'near-api-js';
+import { type Account, connect, keyStores, type Near } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
 
@@ -185,6 +185,22 @@ describe('when running the cli action', () => {
     });
   });
 
+  describe('when there are failed and successful transfers', () => {
+    it('should record both success and failed transfers', async () => {
+      // arrange
+      // act
+      const response: IActionResponse = await action({
+        ...defaultOptions,
+        transfersFilePath: resolve(cwd(), 'test', 'data', 'mixed.json'),
+      });
+
+      // assert
+      expect(response.exitCode).toBe(ExitCodeEnum.Success);
+      expect(Object.entries(response.completedTransfers).length).toBe(1); // ["account1.test.near"]
+      expect(Object.entries(response.failedTransfers).length).toBe(1); // ["'$$%^^)(.test.near"]
+    });
+  });
+
   describe('when there are failed transfers', () => {
     it('should record failed transfers', async () => {
       // arrange
@@ -215,22 +231,6 @@ describe('when running the cli action', () => {
       expect(
         Object.entries(response.failedTransfers).length
       ).toBeLessThanOrEqual(0);
-    });
-  });
-
-  describe('when there are failed and successful transfers', () => {
-    it('should record both success and failed transfers', async () => {
-      // arrange
-      // act
-      const response: IActionResponse = await action({
-        ...defaultOptions,
-        transfersFilePath: resolve(cwd(), 'test', 'data', 'mixed.json'),
-      });
-
-      // assert
-      expect(response.exitCode).toBe(ExitCodeEnum.Success);
-      expect(Object.entries(response.completedTransfers).length).toBe(1); // ["account1.test.near"]
-      expect(Object.entries(response.failedTransfers).length).toBe(1); // ["'$$%^^)(.test.near"]
     });
   });
 });
