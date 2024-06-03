@@ -1,4 +1,5 @@
-import { Account, connect, keyStores, Near } from 'near-api-js';
+import BigNumber from 'bignumber.js';
+import { type Account, connect, keyStores, Near } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
 
@@ -8,42 +9,82 @@ import action from './action';
 // configs
 import { localnet } from '@app/configs';
 
+// credentials
+import { account_id as notEnoughFundsAccountId } from '@test/credentials/localnet/notenoughfunds.test.near.json';
+import { account_id as notEnoughTokensAccountId } from '@test/credentials/localnet/notenoughtokens.test.near.json';
+
 // enums
 import { ExitCodeEnum } from '@app/enums';
 
 // helpers
 import createTestAccount from '@test/helpers/createTestAccount';
+import tokenMetadata from '@test/helpers/tokenMetadata';
 
 // types
-import type { IActionResponse, IActionOptions } from '@app/types';
+import type {
+  IActionResponse,
+  IActionOptions,
+  ITokenMetadata,
+} from '@app/types';
 
 // utils
 import createLogger from '@app/utils/createLogger';
+import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
 
 describe('when running the cli action', () => {
   const creatorAccountID = 'test.near';
   const credentials = resolve(cwd(), 'test', 'credentials');
   const tokenAccountID = 'token.test.near';
   let creatorAccount: Account;
-  let defaultOptions: IActionOptions = {
-    amount: '1',
-    accountId: creatorAccountID,
-    credentials,
-    logger: createLogger('error'),
-    maxRetries: 0,
-    network: localnet.networkId,
-    token: tokenAccountID,
-    transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
-  };
+  let defaultOptions: IActionOptions;
   let near: Near;
 
   beforeAll(async () => {
+    let _tokenMetadata: ITokenMetadata;
+
     near = await connect({
       networkId: localnet.networkId,
       nodeUrl: localnet.nodeUrl,
       keyStore: new keyStores.UnencryptedFileSystemKeyStore(credentials),
     });
     creatorAccount = await near.account(creatorAccountID);
+    _tokenMetadata = await tokenMetadata({
+      tokenAccountID,
+      viewAccount: creatorAccount,
+    });
+    defaultOptions = {
+      amount: new BigNumber('1')
+        .multipliedBy(new BigNumber('10').pow(_tokenMetadata.decimals))
+        .toFixed(),
+      accountId: creatorAccountID,
+      credentials,
+      logger: createLogger('error'),
+      maxRetries: 0,
+      network: localnet.networkId,
+      token: tokenAccountID,
+      transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
+    };
+
+    // setup the test accounts
+    await createTestAccount({
+      connection: near,
+      creatorAccount,
+      newAccountID: notEnoughFundsAccountId,
+      newAccountPublicKey: await near.connection.signer.getPublicKey(
+        notEnoughFundsAccountId,
+        localnet.networkId
+      ),
+    });
+    await createTestAccount({
+      connection: near,
+      creatorAccount,
+      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('100'),
+      newAccountID: notEnoughTokensAccountId,
+      newAccountPublicKey: await near.connection.signer.getPublicKey(
+        notEnoughTokensAccountId,
+        localnet.networkId
+      ),
+    });
   });
 
   describe('when the configuration is incorrect', () => {
@@ -121,24 +162,26 @@ describe('when running the cli action', () => {
 
     it('should fail if there is not enough funds in the account', async () => {
       // arrange
-      const accountId = 'account1.test.near';
-      const account = await createTestAccount({
-        connection: near,
-        creatorAccount,
-        newAccountID: accountId,
-        newAccountPublicKey: await near.connection.signer.getPublicKey(
-          accountId,
-          localnet.networkId
-        ),
-      });
       // act
       const response: IActionResponse = await action({
         ...defaultOptions,
-        accountId: account.accountId,
+        accountId: notEnoughFundsAccountId,
       });
 
       // assert
       expect(response.exitCode).toBe(ExitCodeEnum.InsufficientFundsError);
+    });
+
+    it('should fail if there is not enough tokens in the account', async () => {
+      // arrange
+      // act
+      const response: IActionResponse = await action({
+        ...defaultOptions,
+        accountId: notEnoughTokensAccountId,
+      });
+
+      // assert
+      expect(response.exitCode).toBe(ExitCodeEnum.InsufficientTokensError);
     });
   });
 

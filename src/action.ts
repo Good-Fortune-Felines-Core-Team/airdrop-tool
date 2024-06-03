@@ -52,7 +52,9 @@ export default async function action({
   let signer: Account;
   let signerAccessKey: IAccessKeyResponse;
   let signerPublicKey: utils.PublicKey | null;
+  let accountTokenBalance: BigNumber;
   let totalFeesInAtomicUnits: BigNumber;
+  let totalTokensInAtomicUnits: BigNumber;
   let transactionID: string | null;
   let transfers: Record<string, string>;
 
@@ -163,15 +165,37 @@ export default async function action({
     .plus(new BigNumber(STORAGE_FEE_IN_ATOMIC_UNITS))
     .multipliedBy(new BigNumber(Object.entries(transfers).length));
 
-  // if the signer does not have funds tio cover the fees, error
+  // if the signer does not have funds to cover the fees, error
   if (totalFeesInAtomicUnits.gt(new BigNumber(accountBalance.available))) {
     logger.error(
-      `there are insufficient funds in account "${signer.accountId}" to cover the fees, you need at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toString())}", you have "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
+      `there are insufficient funds in the account "${signer.accountId}" to cover the fees, the account needs at least "${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toString())}", the account only has "${convertYoctoNEARToNEAR(accountBalance.available)}" available`
     );
 
     return {
       completedTransfers,
       exitCode: ExitCodeEnum.InsufficientFundsError,
+      failedTransfers,
+    };
+  }
+
+  accountTokenBalance = new BigNumber(
+    await contract.ft_balance_of({ account_id: accountId })
+  );
+  totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+    (acc, currentValue) =>
+      acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(amount))),
+    new BigNumber('0')
+  );
+
+  // if the signer does not have enough tokens, error
+  if (totalTokensInAtomicUnits.gt(accountTokenBalance)) {
+    logger.error(
+      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toString())}" required, the account only has "${convertYoctoNEARToNEAR(accountTokenBalance.toString())}" available`
+    );
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InsufficientTokensError,
       failedTransfers,
     };
   }

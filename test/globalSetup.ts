@@ -21,6 +21,7 @@ import convertNEARToYoctoNEAR from '../src/utils/convertNEARToYoctoNEAR';
  * Adds and funds the token contract account and deploys and initializes a FT token to the account.
  */
 export default async function globalSetup() {
+  const decimals = 24;
   const near = await connect({
     networkId: localnet.networkId,
     nodeUrl: localnet.nodeUrl,
@@ -28,9 +29,9 @@ export default async function globalSetup() {
       resolve(cwd(), 'test', 'credentials')
     ),
   });
-  const totalSupplyInAtomicUnits: BigNumber = new BigNumber('10').pow(
-    new BigNumber('34')
-  ); // 10^34 == 10,000,000,000,000,000,000,000,000,000,000,000
+  const totalSupplyInAtomicUnits: BigNumber = new BigNumber(
+    '10000000000'
+  ).multipliedBy(new BigNumber('10').pow(new BigNumber(decimals))); // 10B
   let genesisAccount: Account;
   let tokenAccountPublicKey: utils.PublicKey;
   let tokenAccount: Account;
@@ -53,9 +54,10 @@ export default async function globalSetup() {
   // deploy token contract
   await deployToken({
     creatorAccount: genesisAccount,
+    decimals,
     name: 'Awesome Token',
     symbol: 'AWST',
     tokenAccount: tokenAccount,
-    totalSupply: totalSupplyInAtomicUnits.toFixed(), // 10B in yoctoNEAR
+    totalSupply: totalSupplyInAtomicUnits.toFixed(),
   });
 }
