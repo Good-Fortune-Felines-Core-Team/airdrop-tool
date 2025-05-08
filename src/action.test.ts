@@ -23,7 +23,7 @@ import type { IActionOptions, IActionResponse } from '@app/types';
 
 // utils
 import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
-import createLogger from '@app/utils/createLogger';
+import createLogger, { ILogger } from '@app/utils/createLogger';
 
 describe('when running the cli action', () => {
   const creatorAccountID = 'test.near';
@@ -55,7 +55,6 @@ describe('when running the cli action', () => {
     await createTestAccount({
       connection: near,
       creatorAccount,
-      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('0.01'), // Just enough to call token metadata, but not enough for transfers
       newAccountID: notEnoughFundsAccountId,
       newAccountPublicKey: await near.connection.signer.getPublicKey(
         notEnoughFundsAccountId,
@@ -233,6 +232,91 @@ describe('when running the cli action', () => {
       expect(
         Object.entries(response.failedTransfers).length
       ).toBeLessThanOrEqual(0);
+    });
+  });
+
+  describe('when checking storage balance', () => {
+    // Create a custom logger that captures log messages
+    let logMessages: string[] = [];
+    const testLogger: ILogger = {
+      debug: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.log(`[DEBUG] ${message}`, ...optionalParams);
+      },
+      error: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.error(`[ERROR] ${message}`, ...optionalParams);
+      },
+      info: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.info(`[INFO] ${message}`, ...optionalParams);
+      },
+      warn: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.warn(`[WARN] ${message}`, ...optionalParams);
+      },
+    };
+
+    beforeEach(() => {
+      // Clear log messages before each test
+      logMessages = [];
+    });
+
+    it('should only check storage balance once per account in manual mode', async () => {
+      // Run action with manual mode
+      const response = await action({
+        ...defaultOptions,
+        logger: testLogger,
+        manual: true,
+        transfersFilePath: resolve(cwd(), 'test', 'data', 'manual.json'),
+      });
+
+      // Verify success
+      expect(response.exitCode).toBe(ExitCodeEnum.Success);
+
+      // Count storage balance checks in logs
+      const storageChecks = logMessages.filter((msg) =>
+        msg.includes('checking storage balance for')
+      );
+
+      // There are 5 accounts in manual.json, so we should have 5 storage checks
+      expect(storageChecks.length).toBe(5);
+
+      // Verify all transfers completed
+      expect(Object.entries(response.completedTransfers).length).toBe(5);
+    });
+
+    it('should only check storage balance once per account in amount mode', async () => {
+      // Run action with amount mode (default)
+      const response = await action({
+        ...defaultOptions,
+        logger: testLogger,
+        amount: '1',
+        manual: false,
+        transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
+      });
+
+      // Verify success
+      expect(response.exitCode).toBe(ExitCodeEnum.Success);
+
+      // Count storage balance checks in logs
+      const storageChecks = logMessages.filter((msg) =>
+        msg.includes('checking storage balance for')
+      );
+
+      // There are 10 accounts in success.json, so we should have 10 storage checks
+      expect(storageChecks.length).toBe(10);
+
+      // Verify all transfers completed
+      expect(Object.entries(response.completedTransfers).length).toBe(10);
     });
   });
 });
