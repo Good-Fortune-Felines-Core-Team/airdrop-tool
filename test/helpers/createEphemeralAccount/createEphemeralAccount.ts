@@ -12,6 +12,7 @@ import {
 
 // types
 import type { IResult } from './types';
+import { KeyPairString } from '@near-js/crypto';
 
 /**
  * Creates an ephemeral account with a randomised account ID of 8 lower case hexadecimal characters.
@@ -23,7 +24,7 @@ export default async function createEphemeralAccount(
   initialBalanceInAtomicUnits?: string
 ): Promise<IResult> {
   const accountId: string = `${randomBytes(8).toString('hex').toLowerCase()}.test.near`;
-  const faucetKeyPair = KeyPair.fromString(faucetSecretKey); // get the faucet key pair
+  const faucetKeyPair = KeyPair.fromString(faucetSecretKey as KeyPairString); // get the faucet key pair
   const keyPair = utils.KeyPairEd25519.fromRandom(); // create the new access key to be used
   const keyStore = new keyStores.InMemoryKeyStore();
   let faucetAccount: Account;

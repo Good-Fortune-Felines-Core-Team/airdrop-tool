@@ -28,8 +28,11 @@ import type {
 
 // utils
 import accountAccessKeyView from '@app/utils/accountAccessKeyView';
+import convertAtomicToStandard from '@app/utils/convertAtomicToStandard';
+import convertStandardToAtomic from '@app/utils/convertStandardToAtomic';
 import convertYoctoNEARToNEAR from '@app/utils/convertYoctoNEARToNEAR';
 import createNearConnection from '@app/utils/createNearConnection';
+import tokenMetadata from '@app/utils/tokenMetadata';
 import transferToAccount, {
   type IResult as ITransferAccountResult,
 } from '@app/utils/transferToAccount';
@@ -40,7 +43,9 @@ export default async function action({
   accountId,
   amount,
   credentials,
+  dryRun = false,
   logger,
+  manual = false,
   maxRetries,
   network,
   token,
@@ -62,6 +67,7 @@ export default async function action({
   let totalTokensInAtomicUnits: BigNumber;
   let transferAccountResult: ITransferAccountResult;
   let transfers: Record<string, string>;
+  let tokenDecimals: number;
 
   switch (network) {
     case 'localnet':
@@ -145,9 +151,27 @@ export default async function action({
 
   contract = new Contract(signer.connection, token, {
     useLocalViewExecution: false,
-    viewMethods: ['ft_balance_of', 'storage_balance_of'],
+    viewMethods: ['ft_balance_of', 'storage_balance_of', 'ft_metadata'],
     changeMethods: ['ft_transfer', 'storage_deposit'],
   }) as ITokenContract;
+
+  // Get token metadata to determine decimals
+  try {
+    const metadata = await tokenMetadata({
+      tokenAccountID: token,
+      viewAccount: signer,
+    });
+    tokenDecimals = metadata.decimals;
+    logger.info(`Token decimals: ${tokenDecimals}`);
+  } catch (error) {
+    logger.error(`Failed to get token metadata: ${error}`);
+
+    return {
+      completedTransfers,
+      exitCode: ExitCodeEnum.InvalidArguments,
+      failedTransfers,
+    };
+  }
 
   // attempt to get the contents of the accounts file
   try {
@@ -186,22 +210,109 @@ export default async function action({
   accountTokenBalance = new BigNumber(
     await contract.ft_balance_of({ account_id: accountId })
   );
-  totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
-    (acc, currentValue) =>
-      acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(amount))),
-    new BigNumber('0')
-  );
+
+  // Calculate total tokens based on mode (manual or multiplier)
+  if (manual) {
+    // In manual mode, the values in the JSON are standard units that need to be converted to atomic units
+    totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+      (acc, currentValue) => {
+        // Convert from standard units to atomic units
+        const atomicValue = convertStandardToAtomic(
+          currentValue,
+          tokenDecimals
+        );
+        return acc.plus(new BigNumber(atomicValue));
+      },
+      new BigNumber('0')
+    );
+    logger.info(
+      'Using manual mode: JSON values are standard token amounts (will be converted to atomic units)'
+    );
+  } else {
+    // In multiplier mode, the values in the JSON are multipliers for the global amount
+    if (!amount) {
+      logger.error('Amount is required when not in manual mode');
+      return {
+        completedTransfers,
+        exitCode: ExitCodeEnum.InvalidArguments,
+        failedTransfers,
+      };
+    }
+
+    // Convert the amount from standard units to atomic units
+    const atomicAmount = convertStandardToAtomic(amount, tokenDecimals);
+    logger.info(`Converting amount ${amount} to atomic units: ${atomicAmount}`);
+
+    totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+      (acc, currentValue) =>
+        acc.plus(
+          new BigNumber(currentValue).multipliedBy(new BigNumber(atomicAmount))
+        ),
+      new BigNumber('0')
+    );
+    logger.info(
+      `Using multiplier mode: JSON values are multipliers for amount ${amount} (${atomicAmount} atomic units)`
+    );
+  }
 
   // if the signer does not have enough tokens, error
   if (totalTokensInAtomicUnits.gt(accountTokenBalance)) {
     logger.error(
-      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toFixed())}" required, the account only has "${convertYoctoNEARToNEAR(accountTokenBalance.toFixed())}" available`
+      `there are insufficient tokens in the account "${signer.accountId}" to cover the total amount of "${convertAtomicToStandard(totalTokensInAtomicUnits.toFixed(), tokenDecimals)}" required, the account only has "${convertAtomicToStandard(accountTokenBalance.toFixed(), tokenDecimals)}" available`
     );
 
     return {
       completedTransfers,
       exitCode: ExitCodeEnum.InsufficientTokensError,
       failedTransfers,
+    };
+  }
+
+  if (dryRun) {
+    logger.info('DRY RUN MODE: No tokens will be transferred');
+    logger.info(
+      `Would transfer a total of ${convertAtomicToStandard(totalTokensInAtomicUnits.toFixed(), tokenDecimals)} tokens to ${Object.entries(transfers).length} accounts`
+    );
+    logger.info(
+      `Estimated fees: ${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())} NEAR`
+    );
+
+    // Log the details of each transfer
+    logger.info('Transfer details:');
+    for (const [receiverAccountId, value] of Object.entries(transfers)) {
+      if (!validateAccountID(receiverAccountId)) {
+        logger.info(`WOULD SKIP: Invalid account "${receiverAccountId}"`);
+        continue;
+      }
+
+      let transferAmount: BigNumber;
+      if (manual) {
+        // Convert from standard units to atomic units
+        const atomicValue = convertStandardToAtomic(value, tokenDecimals);
+        transferAmount = new BigNumber(atomicValue);
+        logger.info(
+          `WOULD TRANSFER: ${value} tokens to ${receiverAccountId} (standard amount)`
+        );
+      } else {
+        // amount is already converted to atomic units above
+        const atomicAmount = convertStandardToAtomic(amount!, tokenDecimals);
+        transferAmount = new BigNumber(value).multipliedBy(
+          new BigNumber(atomicAmount)
+        );
+        const standardAmount = convertAtomicToStandard(
+          transferAmount.toFixed(),
+          tokenDecimals
+        );
+        logger.info(
+          `WOULD TRANSFER: ${standardAmount} tokens to ${receiverAccountId} (multiplier: ${value})`
+        );
+      }
+    }
+
+    return {
+      completedTransfers: {},
+      exitCode: ExitCodeEnum.Success,
+      failedTransfers: {},
     };
   }
 
@@ -230,22 +341,35 @@ export default async function action({
   console.log(`fetched nonce ${String(signerAccessKeyView.nonce)}`);
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
-    const [receiverAccountId, receiverMultiplier] =
-      Object.entries(transfers)[index];
-    const multipler = new BigNumber(receiverMultiplier);
-    const transferAmount = multipler.multipliedBy(new BigNumber(amount));
+    const [receiverAccountId, receiverValue] = Object.entries(transfers)[index];
+
+    let transferAmount: BigNumber;
+
+    // Calculate transfer amount based on mode
+    if (manual) {
+      // In manual mode, the value is in standard units and needs to be converted to atomic units
+      const atomicValue = convertStandardToAtomic(receiverValue, tokenDecimals);
+      transferAmount = new BigNumber(atomicValue);
+    } else {
+      // In multiplier mode, the value is a multiplier for the global amount
+      // We've already validated that amount exists in the manual check above
+      const atomicAmount = convertStandardToAtomic(amount!, tokenDecimals);
+      transferAmount = new BigNumber(receiverValue).multipliedBy(
+        new BigNumber(atomicAmount)
+      );
+    }
 
     // check if the receiver account id is valid
     if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
-      failedTransfers[receiverAccountId] = multipler.toFixed();
+      failedTransfers[receiverAccountId] = receiverValue;
 
       continue;
     }
 
     logger.info(
-      `transferring "${transferAmount.toFixed()}" to account "${receiverAccountId}"`
+      `transferring "${convertAtomicToStandard(transferAmount.toFixed(), tokenDecimals)}" tokens to account "${receiverAccountId}"`
     );
 
     console.log(`using initial nonce for "${receiverAccountId}" ${nonce}`);
@@ -267,18 +391,18 @@ export default async function action({
     // if we have no transaction id, the transfer has failed
     if (!transferAccountResult.transactionID) {
       logger.debug(
-        `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" failed`
+        `transfer of "${convertAtomicToStandard(transferAmount.toFixed(), tokenDecimals)}" tokens to account "${receiverAccountId}" failed`
       );
 
-      failedTransfers[receiverAccountId] = multipler.toFixed();
+      failedTransfers[receiverAccountId] = receiverValue;
 
       continue;
     }
 
-    completedTransfers[receiverAccountId] = multipler.toFixed();
+    completedTransfers[receiverAccountId] = receiverValue;
 
     logger.info(
-      `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" successful:`,
+      `transfer of "${convertAtomicToStandard(transferAmount.toFixed(), tokenDecimals)}" tokens to account "${receiverAccountId}" successful:`,
       transferAccountResult.transactionID
     );
   }

@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { type Account, connect, keyStores, type Near } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
@@ -18,18 +17,13 @@ import { ExitCodeEnum } from '@app/enums';
 
 // helpers
 import createTestAccount from '@test/helpers/createTestAccount';
-import tokenMetadata from '@test/helpers/tokenMetadata';
 
 // types
-import type {
-  IActionResponse,
-  IActionOptions,
-  ITokenMetadata,
-} from '@app/types';
+import type { IActionOptions, IActionResponse } from '@app/types';
 
 // utils
-import createLogger from '@app/utils/createLogger';
 import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
+import createLogger, { ILogger } from '@app/utils/createLogger';
 
 describe('when running the cli action', () => {
   const creatorAccountID = 'test.near';
@@ -40,22 +34,14 @@ describe('when running the cli action', () => {
   let near: Near;
 
   beforeAll(async () => {
-    let _tokenMetadata: ITokenMetadata;
-
     near = await connect({
       networkId: localnet.networkId,
       nodeUrl: localnet.nodeUrl,
       keyStore: new keyStores.UnencryptedFileSystemKeyStore(credentials),
     });
     creatorAccount = await near.account(creatorAccountID);
-    _tokenMetadata = await tokenMetadata({
-      tokenAccountID,
-      viewAccount: creatorAccount,
-    });
     defaultOptions = {
-      amount: new BigNumber('1')
-        .multipliedBy(new BigNumber('10').pow(_tokenMetadata.decimals))
-        .toFixed(),
+      amount: '1',
       accountId: creatorAccountID,
       credentials,
       logger: createLogger('error'),
@@ -183,6 +169,21 @@ describe('when running the cli action', () => {
       // assert
       expect(response.exitCode).toBe(ExitCodeEnum.InsufficientTokensError);
     });
+
+    it('should fail if token metadata cannot be retrieved', async () => {
+      // arrange
+      // Create a mock token contract without ft_metadata method
+      const invalidTokenId = 'invalid-token.test.near';
+
+      // act
+      const response: IActionResponse = await action({
+        ...defaultOptions,
+        token: invalidTokenId,
+      });
+
+      // assert
+      expect(response.exitCode).toBe(ExitCodeEnum.InvalidArguments);
+    });
   });
 
   describe('when there are failed and successful transfers', () => {
@@ -231,6 +232,91 @@ describe('when running the cli action', () => {
       expect(
         Object.entries(response.failedTransfers).length
       ).toBeLessThanOrEqual(0);
+    });
+  });
+
+  describe('when checking storage balance', () => {
+    // Create a custom logger that captures log messages
+    let logMessages: string[] = [];
+    const testLogger: ILogger = {
+      debug: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.log(`[DEBUG] ${message}`, ...optionalParams);
+      },
+      error: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.error(`[ERROR] ${message}`, ...optionalParams);
+      },
+      info: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.info(`[INFO] ${message}`, ...optionalParams);
+      },
+      warn: (message?: string, ...optionalParams: unknown[]) => {
+        if (typeof message === 'string') {
+          logMessages.push(message);
+        }
+        console.warn(`[WARN] ${message}`, ...optionalParams);
+      },
+    };
+
+    beforeEach(() => {
+      // Clear log messages before each test
+      logMessages = [];
+    });
+
+    it('should only check storage balance once per account in manual mode', async () => {
+      // Run action with manual mode
+      const response = await action({
+        ...defaultOptions,
+        logger: testLogger,
+        manual: true,
+        transfersFilePath: resolve(cwd(), 'test', 'data', 'manual.json'),
+      });
+
+      // Verify success
+      expect(response.exitCode).toBe(ExitCodeEnum.Success);
+
+      // Count storage balance checks in logs
+      const storageChecks = logMessages.filter((msg) =>
+        msg.includes('checking storage balance for')
+      );
+
+      // There are 5 accounts in manual.json, so we should have 5 storage checks
+      expect(storageChecks.length).toBe(5);
+
+      // Verify all transfers completed
+      expect(Object.entries(response.completedTransfers).length).toBe(5);
+    });
+
+    it('should only check storage balance once per account in amount mode', async () => {
+      // Run action with amount mode (default)
+      const response = await action({
+        ...defaultOptions,
+        logger: testLogger,
+        amount: '1',
+        manual: false,
+        transfersFilePath: resolve(cwd(), 'test', 'data', 'success.json'),
+      });
+
+      // Verify success
+      expect(response.exitCode).toBe(ExitCodeEnum.Success);
+
+      // Count storage balance checks in logs
+      const storageChecks = logMessages.filter((msg) =>
+        msg.includes('checking storage balance for')
+      );
+
+      // There are 10 accounts in success.json, so we should have 10 storage checks
+      expect(storageChecks.length).toBe(10);
+
+      // Verify all transfers completed
+      expect(Object.entries(response.completedTransfers).length).toBe(10);
     });
   });
 });

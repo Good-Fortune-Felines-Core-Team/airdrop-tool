@@ -4,8 +4,10 @@ import type TNetworkIDs from './TNetworkIDs';
 
 interface IActionOptions extends IBaseOptions {
   accountId: string;
-  amount: string;
+  amount?: string;
   credentials: string;
+  dryRun?: boolean;
+  manual?: boolean;
   maxRetries?: number;
   network: TNetworkIDs;
   token: string;

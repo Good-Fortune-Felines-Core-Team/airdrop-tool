@@ -11,6 +11,15 @@ interface ITokenMethod {
     args: { account_id: string; registration_only: boolean };
     amount: string;
   }) => Promise<string>;
+  ft_metadata: () => Promise<{
+    decimals: number;
+    icon: string | null;
+    name: string;
+    spec: string;
+    symbol: string;
+    reference: string | null;
+    reference_hash: string | null;
+  }>;
 }
 
 export default ITokenMethod;
