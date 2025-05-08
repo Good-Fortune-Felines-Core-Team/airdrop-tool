@@ -83,7 +83,9 @@ program
       let transfersParsedPath: ParsedPath;
 
       if (manual && amount) {
-        logger.error('Cannot use --amount with --manual. --manual mode uses specific amounts from the JSON file.');
+        logger.error(
+          'Cannot use --amount with --manual. --manual mode uses specific amounts from the JSON file.'
+        );
         return process.exit(ExitCodeEnum.InvalidArguments);
       }
 

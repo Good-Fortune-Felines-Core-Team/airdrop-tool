@@ -19,10 +19,7 @@ import { ExitCodeEnum } from '@app/enums';
 import createTestAccount from '@test/helpers/createTestAccount';
 
 // types
-import type {
-  IActionOptions,
-  IActionResponse
-} from '@app/types';
+import type { IActionOptions, IActionResponse } from '@app/types';
 
 // utils
 import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
@@ -37,7 +34,6 @@ describe('when running the cli action', () => {
   let near: Near;
 
   beforeAll(async () => {
-
     near = await connect({
       networkId: localnet.networkId,
       nodeUrl: localnet.nodeUrl,

@@ -217,12 +217,17 @@ export default async function action({
     totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
       (acc, currentValue) => {
         // Convert from standard units to atomic units
-        const atomicValue = convertStandardToAtomic(currentValue, tokenDecimals);
+        const atomicValue = convertStandardToAtomic(
+          currentValue,
+          tokenDecimals
+        );
         return acc.plus(new BigNumber(atomicValue));
       },
       new BigNumber('0')
     );
-    logger.info('Using manual mode: JSON values are standard token amounts (will be converted to atomic units)');
+    logger.info(
+      'Using manual mode: JSON values are standard token amounts (will be converted to atomic units)'
+    );
   } else {
     // In multiplier mode, the values in the JSON are multipliers for the global amount
     if (!amount) {
@@ -240,10 +245,14 @@ export default async function action({
 
     totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
       (acc, currentValue) =>
-        acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(atomicAmount))),
+        acc.plus(
+          new BigNumber(currentValue).multipliedBy(new BigNumber(atomicAmount))
+        ),
       new BigNumber('0')
     );
-    logger.info(`Using multiplier mode: JSON values are multipliers for amount ${amount} (${atomicAmount} atomic units)`);
+    logger.info(
+      `Using multiplier mode: JSON values are multipliers for amount ${amount} (${atomicAmount} atomic units)`
+    );
   }
 
   // if the signer does not have enough tokens, error
@@ -261,8 +270,12 @@ export default async function action({
 
   if (dryRun) {
     logger.info('DRY RUN MODE: No tokens will be transferred');
-    logger.info(`Would transfer a total of ${convertAtomicToStandard(totalTokensInAtomicUnits.toFixed(), tokenDecimals)} tokens to ${Object.entries(transfers).length} accounts`);
-    logger.info(`Estimated fees: ${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())} NEAR`);
+    logger.info(
+      `Would transfer a total of ${convertAtomicToStandard(totalTokensInAtomicUnits.toFixed(), tokenDecimals)} tokens to ${Object.entries(transfers).length} accounts`
+    );
+    logger.info(
+      `Estimated fees: ${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())} NEAR`
+    );
 
     // Log the details of each transfer
     logger.info('Transfer details:');
@@ -277,13 +290,22 @@ export default async function action({
         // Convert from standard units to atomic units
         const atomicValue = convertStandardToAtomic(value, tokenDecimals);
         transferAmount = new BigNumber(atomicValue);
-        logger.info(`WOULD TRANSFER: ${value} tokens to ${receiverAccountId} (standard amount)`);
+        logger.info(
+          `WOULD TRANSFER: ${value} tokens to ${receiverAccountId} (standard amount)`
+        );
       } else {
         // amount is already converted to atomic units above
         const atomicAmount = convertStandardToAtomic(amount!, tokenDecimals);
-        transferAmount = new BigNumber(value).multipliedBy(new BigNumber(atomicAmount));
-        const standardAmount = convertAtomicToStandard(transferAmount.toFixed(), tokenDecimals);
-        logger.info(`WOULD TRANSFER: ${standardAmount} tokens to ${receiverAccountId} (multiplier: ${value})`);
+        transferAmount = new BigNumber(value).multipliedBy(
+          new BigNumber(atomicAmount)
+        );
+        const standardAmount = convertAtomicToStandard(
+          transferAmount.toFixed(),
+          tokenDecimals
+        );
+        logger.info(
+          `WOULD TRANSFER: ${standardAmount} tokens to ${receiverAccountId} (multiplier: ${value})`
+        );
       }
     }
 
@@ -319,8 +341,7 @@ export default async function action({
   console.log(`fetched nonce ${String(signerAccessKeyView.nonce)}`);
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
-    const [receiverAccountId, receiverValue] =
-      Object.entries(transfers)[index];
+    const [receiverAccountId, receiverValue] = Object.entries(transfers)[index];
 
     let transferAmount: BigNumber;
 
@@ -333,7 +354,9 @@ export default async function action({
       // In multiplier mode, the value is a multiplier for the global amount
       // We've already validated that amount exists in the manual check above
       const atomicAmount = convertStandardToAtomic(amount!, tokenDecimals);
-      transferAmount = new BigNumber(receiverValue).multipliedBy(new BigNumber(atomicAmount));
+      transferAmount = new BigNumber(receiverValue).multipliedBy(
+        new BigNumber(atomicAmount)
+      );
     }
 
     // check if the receiver account id is valid

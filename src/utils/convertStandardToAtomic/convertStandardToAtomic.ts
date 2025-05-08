@@ -6,7 +6,10 @@ import BigNumber from 'bignumber.js';
  * @param {number} decimals - The number of decimal places for the token.
  * @returns {string} The amount in atomic units.
  */
-export default function convertStandardToAtomic(standardAmount: string, decimals: number): string {
+export default function convertStandardToAtomic(
+  standardAmount: string,
+  decimals: number
+): string {
   BigNumber.config({
     ROUNDING_MODE: 0,
   });
