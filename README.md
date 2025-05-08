@@ -33,24 +33,29 @@
 </p>
 
 <p align="center">
-  An airdrop tool for NEP-141 tokens that is designed to shoot a number of tokens to an NFT allowlist (or any list), with the ability to shoot multiple allocations to specific addresses.
+  An airdrop tool for NEP-141 tokens that is designed to shoot a number of tokens to an NFT allowlist (or any list), with the ability to shoot multiple allocations to specific addresses. Supports both uniform distribution with multipliers and specific amounts for each recipient.
 </p>
 
 ### Table of contents
 
 * [1. Installation](#-1-installation)
 * [2. Documentation](#-2-documentation)
-* [3. Development](#-3-development)
-    * [3.1. Requirements](#31-requirements)
-    * [3.2. Setup](#32-setup)
-    * [3.3. Running In Development Mode](#33-running-in-development-mode)
-* [4. Testing](#-4-testing)
-  * [4.1. Requirements](#41-requirements)
-  * [4.1. Running Tests](#42-running-tests)
-* [5. Appendix](#-5-appendix)
-    * [5.1. Useful Commands](#51-useful-commands)
-* [6. How To Contribute](#-6-how-to-contribute)
-* [7. License](#-7-license)
+* [3. CLI Usage](#-3-cli-usage)
+    * [3.1. Basic Usage](#31-basic-usage)
+    * [3.2. Distribution Modes](#32-distribution-modes)
+    * [3.3. Dry Run Mode](#33-dry-run-mode)
+    * [3.4. JSON File Format](#34-json-file-format)
+* [4. Development](#-4-development)
+    * [4.1. Requirements](#41-requirements)
+    * [4.2. Setup](#42-setup)
+    * [4.3. Running In Development Mode](#43-running-in-development-mode)
+* [5. Testing](#-5-testing)
+    * [5.1. Requirements](#51-requirements)
+    * [5.2. Running Tests](#52-running-tests)
+* [6. Appendix](#-6-appendix)
+    * [6.1. Useful Commands](#61-useful-commands)
+* [7. How To Contribute](#-7-how-to-contribute)
+* [8. License](#-8-license)
 
 ## 📦 1. Installation
 
@@ -70,15 +75,110 @@ For full documentation, please see [here][documentation].
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-## 🛠 3. Development
+## 🖥️ 3. CLI Usage
 
-### 3.1. Requirements
+### 3.1. Basic Usage
+
+The airdrop tool provides a command-line interface for distributing NEP-141 tokens to multiple accounts. Here's the basic usage:
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> [options]
+```
+
+Required arguments:
+- `--accountId`: The account ID that will authorize the tokens to airdrop
+- `--token`: The address of the token to airdrop
+- `--accounts`: The path to the JSON file that contains a list of accounts and token amounts
+
+Optional arguments:
+- `--credentials`: The path to the directory that contains the credentials for the account (default: ~/.near-credentials)
+- `--network`: The target network (default: mainnet)
+- `--verbose`: Logs extra information (default: false)
+
+### 3.2. Distribution Modes
+
+The tool supports two distribution modes:
+
+#### Multiplier Mode (Default)
+
+In this mode, you specify a base amount and each recipient receives a multiple of that amount.
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --amount <base-amount>
+```
+
+- `--amount`: The base amount of tokens (in atomic units) to airdrop
+- The JSON file contains account IDs as keys and multipliers as values
+
+#### Manual Mode
+
+In this mode, you specify the exact amount for each recipient directly in the JSON file.
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --manual
+```
+
+- `--manual`: Enables manual mode where JSON values are direct token amounts
+- The JSON file contains account IDs as keys and specific token amounts as values
+- `--amount` should NOT be used with `--manual`
+
+### 3.3. Dry Run Mode
+
+The tool provides a dry run mode that simulates the airdrop without actually transferring tokens:
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --dry-run [--amount <base-amount> | --manual]
+```
+
+- `--dry-run`: Simulates the airdrop without executing transfers
+- Works with both multiplier and manual modes
+- Outputs detailed information about what would happen during an actual airdrop
+
+### 3.4. JSON File Format
+
+The JSON file format depends on the distribution mode:
+
+#### Multiplier Mode Format
+
+```json
+{
+  "account1.near": "1",
+  "account2.near": "0.5",
+  "account3.near": "2"
+}
+```
+
+In this example:
+- `account1.near` would receive 1 × `--amount` tokens
+- `account2.near` would receive 0.5 × `--amount` tokens
+- `account3.near` would receive 2 × `--amount` tokens
+
+#### Manual Mode Format
+
+```json
+{
+  "account1.near": "1000000000000000000000000",
+  "account2.near": "500000000000000000000000",
+  "account3.near": "2000000000000000000000000"
+}
+```
+
+In this example:
+- `account1.near` would receive exactly 1 token (assuming 24 decimals)
+- `account2.near` would receive exactly 0.5 tokens
+- `account3.near` would receive exactly 2 tokens
+
+<sup>[Back to top ^][table-of-contents]</sup>
+
+## 🛠 4. Development
+
+### 4.1. Requirements
 
 * Install [Node v20.9.0+][node]
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-### 3.2. Setup
+### 4.2. Setup
 
 Install the dependencies:
 ```bash
@@ -87,7 +187,7 @@ $ npm install
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-### 3.3. Running In Development Mode
+### 4.3. Running In Development Mode
 
 * To run the CLI in development mode, simply run the npm script:
 ```bash
@@ -98,16 +198,16 @@ $ npm start -- --help
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-## 🧪 4. Testing
+## 🧪 5. Testing
 
-### 4.1. Requirements
+### 5.1. Requirements
 
 * Install [Docker][docker]
 * Install [Docker Compose v2.5.0+][docker-compose]
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-### 4.2. Running Tests
+### 5.2. Running Tests
 
 The test script begins by building and starting a local Near network using the credentials in [`.near`](./.near). Once this has started, the tests are run against this local validator node.
 
@@ -119,9 +219,9 @@ The main account (`.test.near`), whose credentials are stored at [`./test/creden
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-## 📑 5. Appendix
+## 📑 6. Appendix
 
-### 5.1. Useful Commands
+### 6.1. Useful Commands
 
 | Command              | Description                                                                        |
 |----------------------|------------------------------------------------------------------------------------|
@@ -136,13 +236,13 @@ The main account (`.test.near`), whose credentials are stored at [`./test/creden
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-## 👏 6. How To Contribute
+## 👏 7. How To Contribute
 
 Please read the [**Contributing Guide**][contribute] to learn about the development process.
 
 <sup>[Back to top ^][table-of-contents]</sup>
 
-## 📄 7. License
+## 📄 8. License
 
 Please refer to the [LICENSE][license] file.
 

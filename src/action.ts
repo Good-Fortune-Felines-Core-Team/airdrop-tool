@@ -40,7 +40,9 @@ export default async function action({
   accountId,
   amount,
   credentials,
+  dryRun = false,
   logger,
+  manual = false,
   maxRetries,
   network,
   token,
@@ -186,11 +188,32 @@ export default async function action({
   accountTokenBalance = new BigNumber(
     await contract.ft_balance_of({ account_id: accountId })
   );
-  totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
-    (acc, currentValue) =>
-      acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(amount))),
-    new BigNumber('0')
-  );
+
+  // Calculate total tokens based on mode (manual or multiplier)
+  if (manual) {
+    // In manual mode, the values in the JSON are the actual token amounts
+    totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+      (acc, currentValue) => acc.plus(new BigNumber(currentValue)),
+      new BigNumber('0')
+    );
+    logger.info('Using manual mode: JSON values are direct token amounts');
+  } else {
+    // In multiplier mode, the values in the JSON are multipliers for the global amount
+    if (!amount) {
+      logger.error('Amount is required when not in manual mode');
+      return {
+        completedTransfers,
+        exitCode: ExitCodeEnum.InvalidArguments,
+        failedTransfers,
+      };
+    }
+    totalTokensInAtomicUnits = Object.values(transfers).reduce<BigNumber>(
+      (acc, currentValue) =>
+        acc.plus(new BigNumber(currentValue).multipliedBy(new BigNumber(amount))),
+      new BigNumber('0')
+    );
+    logger.info(`Using multiplier mode: JSON values are multipliers for amount ${amount}`);
+  }
 
   // if the signer does not have enough tokens, error
   if (totalTokensInAtomicUnits.gt(accountTokenBalance)) {
@@ -202,6 +225,36 @@ export default async function action({
       completedTransfers,
       exitCode: ExitCodeEnum.InsufficientTokensError,
       failedTransfers,
+    };
+  }
+
+  if (dryRun) {
+    logger.info('DRY RUN MODE: No tokens will be transferred');
+    logger.info(`Would transfer a total of ${convertYoctoNEARToNEAR(totalTokensInAtomicUnits.toFixed())} tokens to ${Object.entries(transfers).length} accounts`);
+    logger.info(`Estimated fees: ${convertYoctoNEARToNEAR(totalFeesInAtomicUnits.toFixed())} NEAR`);
+
+    // Log the details of each transfer
+    logger.info('Transfer details:');
+    for (const [receiverAccountId, value] of Object.entries(transfers)) {
+      if (!validateAccountID(receiverAccountId)) {
+        logger.info(`WOULD SKIP: Invalid account "${receiverAccountId}"`);
+        continue;
+      }
+
+      let transferAmount: BigNumber;
+      if (manual) {
+        transferAmount = new BigNumber(value);
+        logger.info(`WOULD TRANSFER: ${convertYoctoNEARToNEAR(transferAmount.toFixed())} tokens to ${receiverAccountId} (direct amount)`);
+      } else {
+        transferAmount = new BigNumber(value).multipliedBy(new BigNumber(amount!));
+        logger.info(`WOULD TRANSFER: ${convertYoctoNEARToNEAR(transferAmount.toFixed())} tokens to ${receiverAccountId} (multiplier: ${value})`);
+      }
+    }
+
+    return {
+      completedTransfers: {},
+      exitCode: ExitCodeEnum.Success,
+      failedTransfers: {},
     };
   }
 
@@ -230,16 +283,26 @@ export default async function action({
   console.log(`fetched nonce ${String(signerAccessKeyView.nonce)}`);
 
   for (let index = 0; index < Object.entries(transfers).length; index++) {
-    const [receiverAccountId, receiverMultiplier] =
+    const [receiverAccountId, receiverValue] =
       Object.entries(transfers)[index];
-    const multipler = new BigNumber(receiverMultiplier);
-    const transferAmount = multipler.multipliedBy(new BigNumber(amount));
+
+    let transferAmount: BigNumber;
+
+    // Calculate transfer amount based on mode
+    if (manual) {
+      // In manual mode, the value is the direct amount
+      transferAmount = new BigNumber(receiverValue);
+    } else {
+      // In multiplier mode, the value is a multiplier for the global amount
+      // We've already validated that amount exists in the manual check above
+      transferAmount = new BigNumber(receiverValue).multipliedBy(new BigNumber(amount!));
+    }
 
     // check if the receiver account id is valid
     if (!validateAccountID(receiverAccountId)) {
       logger.error(`account "${receiverAccountId}" invalid`);
 
-      failedTransfers[receiverAccountId] = multipler.toFixed();
+      failedTransfers[receiverAccountId] = receiverValue;
 
       continue;
     }
@@ -270,12 +333,12 @@ export default async function action({
         `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" failed`
       );
 
-      failedTransfers[receiverAccountId] = multipler.toFixed();
+      failedTransfers[receiverAccountId] = receiverValue;
 
       continue;
     }
 
-    completedTransfers[receiverAccountId] = multipler.toFixed();
+    completedTransfers[receiverAccountId] = receiverValue;
 
     logger.info(
       `transfer of "${transferAmount.toFixed()}" to account "${receiverAccountId}" successful:`,

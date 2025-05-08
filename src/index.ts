@@ -38,9 +38,19 @@ program
     '--accounts <path>',
     'the path to the JSON file that contains a list of accounts and token amounts'
   )
-  .requiredOption(
+  .option(
     '--amount <number>',
-    'the amount of tokens (in atomic units, i.e. if the token has 6 decimals, and you want to send 1 token, you should use 1000000) to airdrop'
+    'the amount of tokens (in atomic units, i.e. if the token has 6 decimals, and you want to send 1 token, you should use 1000000) to airdrop. Required when --manual is not used.'
+  )
+  .option(
+    '--manual',
+    'use manual mode where the JSON file contains specific token amounts instead of multipliers',
+    false
+  )
+  .option(
+    '--dry-run',
+    'simulate the airdrop without actually transferring tokens',
+    false
   )
   .option(
     '--credentials <path>',
@@ -61,6 +71,8 @@ program
       accounts,
       amount,
       credentials,
+      dryRun,
+      manual,
       network,
       output,
       token,
@@ -69,6 +81,16 @@ program
       const date: Date = new Date();
       const logger: ILogger = createLogger(verbose ? 'debug' : 'error');
       let transfersParsedPath: ParsedPath;
+
+      if (manual && amount) {
+        logger.error('Cannot use --amount with --manual. --manual mode uses specific amounts from the JSON file.');
+        return process.exit(ExitCodeEnum.InvalidArguments);
+      }
+
+      if (!manual && !amount) {
+        logger.error('--amount is required when not in --manual mode.');
+        return process.exit(ExitCodeEnum.InvalidArguments);
+      }
 
       // if the output directory doesn't exist, create it
       if (!existsSync(output)) {
@@ -87,7 +109,9 @@ program
         accountId,
         amount,
         credentials,
+        dryRun,
         logger,
+        manual,
         network,
         token,
         transfersFilePath: accounts,
