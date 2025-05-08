@@ -1,0 +1,108 @@
+import TOCInline from '@theme/TOCInline';
+
+# Distribution Modes
+
+<TOCInline
+  maxHeadingLevel={4}
+  toc={toc}
+/>
+
+The airdrop tool supports multiple distribution modes to give you flexibility in how tokens are allocated to recipients.
+
+## Multiplier Mode (Default)
+
+In this mode, you specify a base amount and each recipient receives a multiple of that amount.
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --amount <base-amount>
+```
+
+- `--amount`: The base amount of tokens (in standard units) to airdrop
+- The JSON file contains account IDs as keys and multipliers as values
+
+### Example
+
+If you set `--amount=10` and your JSON file contains:
+
+```json
+{
+  "account1.near": "1",
+  "account2.near": "0.5",
+  "account3.near": "2"
+}
+```
+
+The distribution would be:
+- `account1.near` would receive 1 × 10 = 10 tokens
+- `account2.near` would receive 0.5 × 10 = 5 tokens
+- `account3.near` would receive 2 × 10 = 20 tokens
+
+## Manual Mode
+
+In this mode, you specify the exact amount for each recipient directly in the JSON file.
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --manual
+```
+
+- `--manual`: Enables manual mode where JSON values are standard (human-readable) token amounts
+- The JSON file contains account IDs as keys and specific token amounts in standard units as values
+- The tool automatically converts standard amounts to atomic units based on the token's decimals
+- `--amount` should NOT be used with `--manual`
+
+### Example
+
+With the `--manual` flag and a JSON file containing:
+
+```json
+{
+  "account1.near": "1",
+  "account2.near": "0.5",
+  "account3.near": "2"
+}
+```
+
+The distribution would be:
+- `account1.near` would receive exactly 1 token in standard units
+- `account2.near` would receive exactly 0.5 tokens in standard units
+- `account3.near` would receive exactly 2 tokens in standard units
+
+The tool automatically converts these standard amounts to the appropriate atomic units based on the token's decimals.
+
+## Dry Run Mode
+
+The tool provides a dry run mode that simulates the airdrop without actually transferring tokens:
+
+```bash
+$ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --dry-run [--amount <base-amount> | --manual]
+```
+
+- `--dry-run`: Simulates the airdrop without executing transfers
+- Works with both multiplier and manual modes
+- Outputs detailed information about what would happen during an actual airdrop
+
+This mode is useful for:
+- Verifying your distribution configuration before executing
+- Checking token balances to ensure sufficient funds
+- Estimating gas costs for the operation
+
+## JSON File Format
+
+The JSON file format is the same for both distribution modes, but the interpretation of the values differs:
+
+```json
+{
+  "account1.near": "1",
+  "account2.near": "0.5",
+  "account3.near": "2"
+}
+```
+
+- In **Multiplier Mode**: Values are treated as multipliers of the base amount
+- In **Manual Mode**: Values are treated as exact token amounts in standard units
+
+:::caution
+
+The file **MUST** be a valid JSON file. An error will be thrown otherwise.
+
+:::
