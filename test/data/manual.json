@@ -1,7 +1,7 @@
 {
-  "account1.test.near": "1000000000000000000000000",
-  "account2.test.near": "500000000000000000000000",
-  "account3.test.near": "2000000000000000000000000",
-  "account4.test.near": "750000000000000000000000",
-  "account5.test.near": "3000000000000000000000000"
+  "account1.test.near": "1",
+  "account2.test.near": "5",
+  "account3.test.near": "2",
+  "account4.test.near": "7",
+  "account5.test.near": "3"
 }

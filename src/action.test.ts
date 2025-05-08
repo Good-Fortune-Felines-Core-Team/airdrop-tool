@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js';
 import { type Account, connect, keyStores, type Near } from 'near-api-js';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
@@ -18,18 +17,16 @@ import { ExitCodeEnum } from '@app/enums';
 
 // helpers
 import createTestAccount from '@test/helpers/createTestAccount';
-import tokenMetadata from '@test/helpers/tokenMetadata';
 
 // types
 import type {
-  IActionResponse,
   IActionOptions,
-  ITokenMetadata,
+  IActionResponse
 } from '@app/types';
 
 // utils
-import createLogger from '@app/utils/createLogger';
 import convertNEARToYoctoNEAR from '@app/utils/convertNEARToYoctoNEAR';
+import createLogger from '@app/utils/createLogger';
 
 describe('when running the cli action', () => {
   const creatorAccountID = 'test.near';
@@ -40,7 +37,6 @@ describe('when running the cli action', () => {
   let near: Near;
 
   beforeAll(async () => {
-    let _tokenMetadata: ITokenMetadata;
 
     near = await connect({
       networkId: localnet.networkId,
@@ -48,14 +44,8 @@ describe('when running the cli action', () => {
       keyStore: new keyStores.UnencryptedFileSystemKeyStore(credentials),
     });
     creatorAccount = await near.account(creatorAccountID);
-    _tokenMetadata = await tokenMetadata({
-      tokenAccountID,
-      viewAccount: creatorAccount,
-    });
     defaultOptions = {
-      amount: new BigNumber('1')
-        .multipliedBy(new BigNumber('10').pow(_tokenMetadata.decimals))
-        .toFixed(),
+      amount: '1',
       accountId: creatorAccountID,
       credentials,
       logger: createLogger('error'),
@@ -69,6 +59,7 @@ describe('when running the cli action', () => {
     await createTestAccount({
       connection: near,
       creatorAccount,
+      initialBalanceInAtomicUnits: convertNEARToYoctoNEAR('0.01'), // Just enough to call token metadata, but not enough for transfers
       newAccountID: notEnoughFundsAccountId,
       newAccountPublicKey: await near.connection.signer.getPublicKey(
         notEnoughFundsAccountId,
@@ -182,6 +173,21 @@ describe('when running the cli action', () => {
 
       // assert
       expect(response.exitCode).toBe(ExitCodeEnum.InsufficientTokensError);
+    });
+
+    it('should fail if token metadata cannot be retrieved', async () => {
+      // arrange
+      // Create a mock token contract without ft_metadata method
+      const invalidTokenId = 'invalid-token.test.near';
+
+      // act
+      const response: IActionResponse = await action({
+        ...defaultOptions,
+        token: invalidTokenId,
+      });
+
+      // assert
+      expect(response.exitCode).toBe(ExitCodeEnum.InvalidArguments);
     });
   });
 

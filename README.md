@@ -107,7 +107,7 @@ In this mode, you specify a base amount and each recipient receives a multiple o
 $ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --amount <base-amount>
 ```
 
-- `--amount`: The base amount of tokens (in atomic units) to airdrop
+- `--amount`: The base amount of tokens (in standard units) to airdrop
 - The JSON file contains account IDs as keys and multipliers as values
 
 #### Manual Mode
@@ -118,8 +118,9 @@ In this mode, you specify the exact amount for each recipient directly in the JS
 $ airdrop-tool --accountId <sender-account> --token <token-contract-address> --accounts <path-to-json-file> --manual
 ```
 
-- `--manual`: Enables manual mode where JSON values are direct token amounts
-- The JSON file contains account IDs as keys and specific token amounts as values
+- `--manual`: Enables manual mode where JSON values are standard (human-readable) token amounts
+- The JSON file contains account IDs as keys and specific token amounts in standard units as values
+- The tool automatically converts standard amounts to atomic units based on the token's decimals
 - `--amount` should NOT be used with `--manual`
 
 ### 3.3. Dry Run Mode
@@ -157,16 +158,18 @@ In this example:
 
 ```json
 {
-  "account1.near": "1000000000000000000000000",
-  "account2.near": "500000000000000000000000",
-  "account3.near": "2000000000000000000000000"
+  "account1.near": "1",
+  "account2.near": "0.5",
+  "account3.near": "2"
 }
 ```
 
 In this example:
-- `account1.near` would receive exactly 1 token (assuming 24 decimals)
-- `account2.near` would receive exactly 0.5 tokens
-- `account3.near` would receive exactly 2 tokens
+- `account1.near` would receive exactly 1 token in standard units
+- `account2.near` would receive exactly 0.5 tokens in standard units
+- `account3.near` would receive exactly 2 tokens in standard units
+
+The tool automatically converts these standard amounts to the appropriate atomic units based on the token's decimals.
 
 <sup>[Back to top ^][table-of-contents]</sup>
 

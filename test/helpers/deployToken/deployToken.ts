@@ -7,7 +7,7 @@ import type { ITokenMetadata } from '@app/types';
 import type { IOptions } from './types';
 
 // utils
-import tokenMetadata from '../tokenMetadata';
+import tokenMetadata from '@app/utils/tokenMetadata';
 
 /**
  * Deploys the token factory contract to the token account and initializes the token.
